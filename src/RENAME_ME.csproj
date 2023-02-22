@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net48</TargetFramework>
+		<LangVersion>11</LangVersion>
+	</PropertyGroup>
+	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+		<LangVersion>9.0</LangVersion>
+	</PropertyGroup>
+	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+		<LangVersion>9.0</LangVersion>
+	</PropertyGroup>
+	<ItemGroup>
+		<Reference Include="../lib/*.dll">
+			<Private>false</Private>
+		</Reference>
+	</ItemGroup>
+	<ItemGroup>
+	  <None Remove="obs-websocket-dotnet" />
+	</ItemGroup>
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="Exists('$(ProjectDir)../../_resources/Rain World/')">
+		<ItemGroup>
+			<Assets Include="$(ProjectDir)../assets/**/*.*" />
+		</ItemGroup>
+		<Copy SourceFiles="@(Assets)" DestinationFiles="$(ProjectDir)../../_resources/Rain World//RainWorld_Data/StreamingAssets/mods/$(ProjectName)/%(RecursiveDir)%(Filename)%(Extension)" />
+		<Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ProjectDir)../../_resources/Rain World//RainWorld_Data/StreamingAssets/mods/$(ProjectName)/plugins" />
+	</Target>
+</Project>
