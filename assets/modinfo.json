@@ -4,8 +4,8 @@
   "version": "0.1.0",
   "authors": "FrostBird347",
   "description": "Upon death, you will leave a temporary remnant for other players to find.",
-  "requirements": [""],
-  "requirements_names": [""],
+  "requirements": [],
+  "requirements_names": [],
   "checksum_override_version": false,
   "target_game_version": "1.9.05"
 }
