@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using RWCustom;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -13,12 +15,22 @@ namespace Vestiges {
 		public Color col;
 		public float sin;
 		public Vector2 target;
+		public bool exists;
+		public bool initSprite = false;
+		public int spriteIndex = 0;
+		BepInEx.Logging.ManualLogSource Logger;
+
+		public void SetupLogger(BepInEx.Logging.ManualLogSource newLogger) {
+			Logger = newLogger;
+		}
 
 		public Vestige(Room room, Vector2 pos, Color colour) : base(room, pos, PluginEnums.Vestige) {
 			lastLastPos = pos;
 			sin = Random.value;
 			col = colour;
 			target = pos;
+			exists = true;
+			this.room = room;
 		}
 
 		public override void Reset(Vector2 resetPos) {
@@ -32,6 +44,11 @@ namespace Vestiges {
 		}
 
 		public override void Update(bool eu) {
+			if (room == null) {
+				exists = false;
+				Destroy();
+				return;
+			}
 			vel *= 0.95f;
 			vel.x = vel.x + dir.x * 0.3f;
 			vel.y = vel.y + dir.y * 0.2f;
@@ -40,13 +57,12 @@ namespace Vestiges {
 
 			if (wantToBurrow) {
 				dir = Vector2.Lerp(dir, new Vector2(0f, -1f), 0.1f);
-			} else if (base.OutOfBounds) {
-				dir = Vector2.Lerp(dir, Custom.DirVec(pos, mySwarm.placedObject.pos), Mathf.InverseLerp(mySwarm.insectGroupData.Rad, mySwarm.insectGroupData.Rad + 100f, Vector2.Distance(pos, mySwarm.placedObject.pos)));
-			}
+			}// else if (base.OutOfBounds) {
+			 //	dir = Vector2.Lerp(dir, Custom.DirVec(pos, mySwarm.placedObject.pos), Mathf.InverseLerp(mySwarm.insectGroupData.Rad, mySwarm.insectGroupData.Rad + 100f, Vector2.Distance(pos, mySwarm.placedObject.pos)));
+			 //}
 
 			float num = TileScore(room.GetTilePosition(pos));
 			IntVector2 intVector = new IntVector2(0, 0);
-
 			for (int i = 0; i < 4; i++) {
 				if (!room.GetTile(room.GetTilePosition(pos) + Custom.fourDirections[i]).Solid && TileScore(room.GetTilePosition(pos) + Custom.fourDirections[i] * 3) > num) {
 					num = TileScore(room.GetTilePosition(pos) + Custom.fourDirections[i] * 3);
@@ -76,7 +92,9 @@ namespace Vestiges {
 
 			lastLastPos = lastPos;
 			base.Update(eu);
+
 			if (!room.BeingViewed) {
+				exists = false;
 				Destroy();
 			}
 		}
@@ -89,19 +107,26 @@ namespace Vestiges {
 		}
 
 		public override void InitiateSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam) {
-			sLeaser.sprites = new FSprite[1];
-			sLeaser.sprites[0] = new FSprite("pixel", true);
-			sLeaser.sprites[0].scaleX = 2f;
-			sLeaser.sprites[0].anchorY = 0f;
-			sLeaser.sprites[0].color = col;
+			//sLeaser.sprites = new FSprite[1];
+			spriteIndex = sLeaser.sprites.Length;
+			Logger.LogInfo(sLeaser.sprites.Length);
+			FSprite[] newSprite = new FSprite[] { new FSprite("pixel", true) };
+			sLeaser.sprites = sLeaser.sprites.Concat(newSprite).ToArray();
+
+			sLeaser.sprites[spriteIndex].scaleX = 2f;
+			sLeaser.sprites[spriteIndex].anchorY = 0f;
+			sLeaser.sprites[spriteIndex].color = col;
 			AddToContainer(sLeaser, rCam, null);
+			initSprite = true;
+			Logger.LogInfo(sLeaser.sprites.Length);
 		}
 
 		public override void DrawSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, float timeStacker, Vector2 camPos) {
-			sLeaser.sprites[0].x = Mathf.Lerp(lastPos.x, pos.x, timeStacker) - camPos.x;
-			sLeaser.sprites[0].y = Mathf.Lerp(lastPos.y, pos.y, timeStacker) - camPos.y;
-			sLeaser.sprites[0].rotation = Custom.AimFromOneVectorToAnother(Vector2.Lerp(lastLastPos, lastPos, timeStacker), Vector2.Lerp(lastPos, pos, timeStacker));
-			sLeaser.sprites[0].scaleY = Mathf.Max(2f, 2f + 1.1f * Vector2.Distance(Vector2.Lerp(lastLastPos, lastPos, timeStacker), Vector2.Lerp(lastPos, pos, timeStacker)));
+			Logger.LogInfo(spriteIndex);
+			sLeaser.sprites[spriteIndex].x = Mathf.Lerp(lastPos.x, pos.x, timeStacker) - camPos.x;
+			sLeaser.sprites[spriteIndex].y = Mathf.Lerp(lastPos.y, pos.y, timeStacker) - camPos.y;
+			sLeaser.sprites[spriteIndex].rotation = Custom.AimFromOneVectorToAnother(Vector2.Lerp(lastLastPos, lastPos, timeStacker), Vector2.Lerp(lastPos, pos, timeStacker));
+			sLeaser.sprites[spriteIndex].scaleY = Mathf.Max(2f, 2f + 1.1f * Vector2.Distance(Vector2.Lerp(lastLastPos, lastPos, timeStacker), Vector2.Lerp(lastPos, pos, timeStacker)));
 			base.DrawSprites(sLeaser, rCam, timeStacker, camPos);
 		}
 

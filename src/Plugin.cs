@@ -4,6 +4,10 @@ using System;
 using System.Numerics;
 using UnityEngine;
 using Vector2 = UnityEngine.Vector2;
+using System.Linq;
+using static RoomCamera;
+using System.Collections.Generic;
+using System.IO;
 
 // Allows access to private members
 #pragma warning disable CS0618
@@ -17,12 +21,16 @@ namespace Vestiges {
 		bool init;
 		private PluginOptions Options = null;
 		bool configWorking = false;
+		List<Vestige> vestigeList = new List<Vestige>();
 
 		public void OnEnable() {
 			// Add hooks here
 			On.RainWorld.OnModsInit += Init;
 
-			On.Player.Jump += SpawnFlyAtJump;
+			On.Player.MovementUpdate += SpawnFly;
+			On.Player.Update += UpdateFly;
+			On.GraphicsModule.DrawSprites += DrawFly;
+			On.GraphicsModule.InitiateSprites += ResetFly;
 		}
 
 		public void OnDisable() {
@@ -47,11 +55,60 @@ namespace Vestiges {
 			}
 		}
 
-		private void SpawnFlyAtJump(On.Player.orig_Jump orig, Player self) {
-			orig(self);
+		private void SpawnFly(On.Player.orig_MovementUpdate orig, Player self, bool eu) {
+			orig(self, eu);
 
 			Vector2 spawnPos = self.mainBodyChunk.pos + new Vector2(0f, (self.mainBodyChunk.rad * 2));
-			new Vestige(self.room, spawnPos, new Color(0.25f, 0.75f, 1f, 0.25f));
+			Vestige newBug = new Vestige(self.room, spawnPos, new Color(0.25f, 0.75f, 1f));
+			newBug.SetupLogger(Logger);
+			vestigeList.Add(newBug);
 		}
+
+		private void UpdateFly(On.Player.orig_Update orig, Player self, bool eu) {
+			orig(self, eu);
+
+			Logger.LogInfo("UPDATEFLY");
+			for (int i = 0; i < vestigeList.Count; i++) {
+				Logger.LogInfo("UPDATEFLY_");
+				if (vestigeList[i] != null && vestigeList[i].exists) {
+					vestigeList[i].Update(eu);
+				} else {
+					vestigeList[i] = null;
+					vestigeList.RemoveAt(i);
+					Logger.LogInfo("REMOVEFLY_");
+					i--;
+				}
+			}
+		}
+
+		private void DrawFly(On.GraphicsModule.orig_DrawSprites orig, GraphicsModule self, SpriteLeaser sLeaser, RoomCamera rCam, float timeStacker, Vector2 camPos) {
+			orig(self, sLeaser, rCam, timeStacker, camPos);
+
+			Logger.LogInfo("DRAWFLY");
+			for (int i = 0; i < vestigeList.Count; i++) {
+				Logger.LogInfo("DRAWFLY_");
+				if (vestigeList[i] != null && vestigeList[i].exists && vestigeList[i].spriteIndex < sLeaser.sprites.Length) {
+					if (!vestigeList[i].initSprite) {
+						Logger.LogInfo("InitiateSprites");
+						vestigeList[i].InitiateSprites(sLeaser, rCam);
+					}
+					Logger.LogInfo("DrawSprites");
+					vestigeList[i].DrawSprites(sLeaser, rCam, timeStacker, camPos);
+				} else if (vestigeList[i].spriteIndex >= sLeaser.sprites.Length) {
+					Logger.LogInfo("REMOVEFLY_");
+					Logger.LogInfo(vestigeList[i].spriteIndex);
+					Logger.LogInfo(sLeaser.sprites.Length);
+					vestigeList[i] = null;
+					i--;
+				}
+			}
+		}
+
+		private void ResetFly(On.GraphicsModule.orig_InitiateSprites orig, GraphicsModule self, SpriteLeaser sLeaser, RoomCamera rCam) {
+			Logger.LogInfo("RESETFLY_");
+			vestigeList.Clear();
+			orig(self, sLeaser, rCam);
+		}
+
 	}
 }
