@@ -57,11 +57,12 @@ namespace Vestiges {
 
 		private void SpawnFly(On.Player.orig_MovementUpdate orig, Player self, bool eu) {
 			orig(self, eu);
-
-			Vector2 spawnPos = self.mainBodyChunk.pos + new Vector2(0f, (self.mainBodyChunk.rad * 2));
-			Vestige newBug = new Vestige(self.room, spawnPos, new Color(0.25f, 0.75f, 1f));
-			newBug.SetupLogger(Logger);
-			vestigeList.Add(newBug);
+			if (self.FoodInStomach > 0) {
+				Vector2 spawnPos = self.mainBodyChunk.pos + new Vector2(0f, (self.mainBodyChunk.rad * 2));
+				Vestige newBug = new Vestige(self.room, spawnPos, new Color(0.25f, 0.75f, 1f));
+				newBug.SetupLogger(Logger);
+				vestigeList.Add(newBug);
+			}
 		}
 
 		private void UpdateFly(On.Player.orig_Update orig, Player self, bool eu) {
