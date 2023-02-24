@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using RWCustom;
 using UnityEngine;
+using UnityEngine.Scripting;
 using Random = UnityEngine.Random;
 
 //Modified version of the vanilla fireflies
@@ -11,7 +12,7 @@ namespace Vestiges {
 	public class Vestige : CosmeticInsect {
 		private Vector2 dir;
 		private Vector2 lastLastPos;
-		private LightSource light;
+		public LightSource light;
 		public Color col;
 		public float sin;
 		public Vector2 target;
@@ -106,28 +107,35 @@ namespace Vestiges {
 			return Random.value / (float)Math.Abs(room.aimap.getAItile(tile).floorAltitude - 4) / (float)Math.Abs(room.aimap.getAItile(tile).terrainProximity - 4);
 		}
 
-		public override void InitiateSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam) {
+		public void InitiateSprites(RoomCamera rCam) {
 			//sLeaser.sprites = new FSprite[1];
-			spriteIndex = sLeaser.sprites.Length;
-			Logger.LogInfo(sLeaser.sprites.Length);
+			spriteIndex = rCam.spriteLeasers.Count;
+			Logger.LogInfo(rCam.spriteLeasers.Count);
 			FSprite[] newSprite = new FSprite[] { new FSprite("pixel", true) };
-			sLeaser.sprites = sLeaser.sprites.Concat(newSprite).ToArray();
 
-			sLeaser.sprites[spriteIndex].scaleX = 2f;
-			sLeaser.sprites[spriteIndex].anchorY = 0f;
-			sLeaser.sprites[spriteIndex].color = col;
+			RoomCamera.SpriteLeaser sLeaser = new RoomCamera.SpriteLeaser(this, rCam);
+
+			sLeaser.sprites = newSprite;
+
+			sLeaser.sprites[0].scaleX = 2f;
+			sLeaser.sprites[0].anchorY = 0f;
+			sLeaser.sprites[0].color = col;
 			AddToContainer(sLeaser, rCam, null);
 			initSprite = true;
-			Logger.LogInfo(sLeaser.sprites.Length);
+			rCam.spriteLeasers.Add(sLeaser);
+			Logger.LogInfo(rCam.spriteLeasers.Count);
 		}
 
 		public override void DrawSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, float timeStacker, Vector2 camPos) {
+			Logger.LogInfo("A");
 			Logger.LogInfo(spriteIndex);
-			sLeaser.sprites[spriteIndex].x = Mathf.Lerp(lastPos.x, pos.x, timeStacker) - camPos.x;
-			sLeaser.sprites[spriteIndex].y = Mathf.Lerp(lastPos.y, pos.y, timeStacker) - camPos.y;
-			sLeaser.sprites[spriteIndex].rotation = Custom.AimFromOneVectorToAnother(Vector2.Lerp(lastLastPos, lastPos, timeStacker), Vector2.Lerp(lastPos, pos, timeStacker));
-			sLeaser.sprites[spriteIndex].scaleY = Mathf.Max(2f, 2f + 1.1f * Vector2.Distance(Vector2.Lerp(lastLastPos, lastPos, timeStacker), Vector2.Lerp(lastPos, pos, timeStacker)));
+			sLeaser.sprites[0].x = Mathf.Lerp(lastPos.x, pos.x, timeStacker) - camPos.x;
+			sLeaser.sprites[0].y = Mathf.Lerp(lastPos.y, pos.y, timeStacker) - camPos.y;
+			sLeaser.sprites[0].rotation = Custom.AimFromOneVectorToAnother(Vector2.Lerp(lastLastPos, lastPos, timeStacker), Vector2.Lerp(lastPos, pos, timeStacker));
+			sLeaser.sprites[0].scaleY = Mathf.Max(2f, 2f + 1.1f * Vector2.Distance(Vector2.Lerp(lastLastPos, lastPos, timeStacker), Vector2.Lerp(lastPos, pos, timeStacker)));
+			Logger.LogInfo("B");
 			base.DrawSprites(sLeaser, rCam, timeStacker, camPos);
+			Logger.LogInfo("C");
 		}
 
 		public override void ApplyPalette(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, RoomPalette palette) {

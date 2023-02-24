@@ -58,6 +58,7 @@ namespace Vestiges {
 		private void SpawnFly(On.Player.orig_MovementUpdate orig, Player self, bool eu) {
 			orig(self, eu);
 			if (self.FoodInStomach > 0) {
+				Logger.LogInfo("SPAWNFLY");
 				Vector2 spawnPos = self.mainBodyChunk.pos + new Vector2(0f, (self.mainBodyChunk.rad * 2));
 				Vestige newBug = new Vestige(self.room, spawnPos, new Color(0.25f, 0.75f, 1f));
 				newBug.SetupLogger(Logger);
@@ -68,16 +69,16 @@ namespace Vestiges {
 		private void UpdateFly(On.Player.orig_Update orig, Player self, bool eu) {
 			orig(self, eu);
 
-			Logger.LogInfo("UPDATEFLY");
+			Logger.LogInfo("UPDATEFLY: " + vestigeList.Count);
 			for (int i = 0; i < vestigeList.Count; i++) {
-				Logger.LogInfo("UPDATEFLY_");
+				//Logger.LogInfo("UPDATEFLY_");
 				if (vestigeList[i] != null && vestigeList[i].exists) {
 					vestigeList[i].Update(eu);
 				} else {
-					vestigeList[i] = null;
-					vestigeList.RemoveAt(i);
-					Logger.LogInfo("REMOVEFLY_");
-					i--;
+					//vestigeList[i] = null;
+					//vestigeList.RemoveAt(i);
+					//Logger.LogInfo("REMOVEFLY_");
+					//i--;
 				}
 			}
 		}
@@ -88,25 +89,34 @@ namespace Vestiges {
 			Logger.LogInfo("DRAWFLY");
 			for (int i = 0; i < vestigeList.Count; i++) {
 				Logger.LogInfo("DRAWFLY_");
-				if (vestigeList[i] != null && vestigeList[i].exists && vestigeList[i].spriteIndex < sLeaser.sprites.Length) {
+				if (vestigeList[i] != null && vestigeList[i].exists) {
 					if (!vestigeList[i].initSprite) {
 						Logger.LogInfo("InitiateSprites");
-						vestigeList[i].InitiateSprites(sLeaser, rCam);
+						vestigeList[i].InitiateSprites(rCam);
 					}
 					Logger.LogInfo("DrawSprites");
-					vestigeList[i].DrawSprites(sLeaser, rCam, timeStacker, camPos);
-				} else if (vestigeList[i].spriteIndex >= sLeaser.sprites.Length) {
+					Logger.LogInfo(vestigeList[i].spriteIndex);
+					Logger.LogInfo(rCam.spriteLeasers.Count);
+					Logger.LogInfo(i + "/" + vestigeList.Count);
+					vestigeList[i].DrawSprites(rCam.spriteLeasers[vestigeList[i].spriteIndex], rCam, timeStacker, camPos);
+				} else if (vestigeList[i] != null && !vestigeList[i].exists) {
 					Logger.LogInfo("REMOVEFLY_");
 					Logger.LogInfo(vestigeList[i].spriteIndex);
-					Logger.LogInfo(sLeaser.sprites.Length);
+					Logger.LogInfo(rCam.spriteLeasers.Count);
+					rCam.spriteLeasers[vestigeList[i].spriteIndex].deleteMeNextFrame = true;
+					vestigeList[i].light.Destroy();
 					vestigeList[i] = null;
+				} else if (vestigeList[i] == null) {
+					Logger.LogInfo("CLEANFLY_");
+					vestigeList.RemoveAt(i);
 					i--;
 				}
 			}
 		}
 
 		private void ResetFly(On.GraphicsModule.orig_InitiateSprites orig, GraphicsModule self, SpriteLeaser sLeaser, RoomCamera rCam) {
-			Logger.LogInfo("RESETFLY_");
+			Logger.LogInfo("RESETFLY");
+			//rCam.ClearAllSprites();
 			vestigeList.Clear();
 			orig(self, sLeaser, rCam);
 		}
