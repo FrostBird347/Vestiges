@@ -32,7 +32,8 @@ namespace Vestiges {
 
 			On.Player.NewRoom += SpawnVestiges;
 			On.Player.Update += UpdateFly;
-			On.Player.Die += AddNewVestige;
+			On.Player.PermaDie += AddNewVestige;
+			//On.Player.PermaDie;
 		}
 
 		public void OnDisable() {
@@ -66,7 +67,7 @@ namespace Vestiges {
 			string roomName = newRoom.abstractRoom.name;
 			string regionName = newRoom.world.region.name;
 
-			if (vestigeData.ContainsKey(regionName) && vestigeData[regionName].ContainsKey(roomName)) {
+			if (!self.dead && vestigeData.ContainsKey(regionName) && vestigeData[regionName].ContainsKey(roomName)) {
 				for (int i = 0; i < vestigeData[regionName][roomName].Count; i++) {
 
 					VestigeSpawn spawnInfo = vestigeData[regionName][roomName][i];
@@ -91,24 +92,32 @@ namespace Vestiges {
 			}
 		}
 
-		private void AddNewVestige(On.Player.orig_Die orig, Player self) {
-			string roomName = self.room.abstractRoom.name;
-			string regionName = self.room.world.region.name;
+		private void AddNewVestige(On.Player.orig_PermaDie orig, Player self) {
+			if (self.room.world.game.IsStorySession) {
 
-			if (!vestigeData.ContainsKey(regionName)) {
-				vestigeData.Add(regionName, new Dictionary<string, List<VestigeSpawn>>());
-			}
-			if (!vestigeData[regionName].ContainsKey(roomName)) {
-				vestigeData[regionName].Add(roomName, new List<VestigeSpawn>());
+				string roomName = self.room.abstractRoom.name;
+				string regionName = self.room.world.region.name;
+
+				if (!vestigeData.ContainsKey(regionName)) {
+					vestigeData.Add(regionName, new Dictionary<string, List<VestigeSpawn>>());
+				}
+				if (!vestigeData[regionName].ContainsKey(roomName)) {
+					vestigeData[regionName].Add(roomName, new List<VestigeSpawn>());
+				}
+
+				Vector2 safePos = self.mainBodyChunk.pos;
+				if (self.karmaFlowerGrowPos.HasValue && self.karmaFlowerGrowPos.Value.Valid && self.room.abstractRoom.index == self.karmaFlowerGrowPos.Value.room) {
+					safePos = new Vector2(self.karmaFlowerGrowPos.Value.x, self.karmaFlowerGrowPos.Value.y);
+				}
+				VestigeSpawn newSpawn = new VestigeSpawn(roomName, regionName, self.ShortCutColor(), self.mainBodyChunk.pos, safePos);
+
+				vestigeData[regionName][roomName].Add(newSpawn);
+
+				Vestige newBug = new Vestige(self.room, newSpawn.spawn, newSpawn.target, newSpawn.colour, 2);
+				self.room.AddObject(newBug);
+				activeVestigeList.Add(newBug);
 			}
 
-			Vector2 safePos = self.mainBodyChunk.pos;
-			if (self.karmaFlowerGrowPos.HasValue && self.karmaFlowerGrowPos.Value.Valid && self.room.abstractRoom.index == self.karmaFlowerGrowPos.Value.room) {
-				safePos = new Vector2(self.karmaFlowerGrowPos.Value.x, self.karmaFlowerGrowPos.Value.y);
-			}
-			VestigeSpawn newSpawn = new VestigeSpawn(roomName, regionName, new Color(0.25f, 0.75f, 1f), self.mainBodyChunk.pos, safePos);
-
-			vestigeData[regionName][roomName].Add(newSpawn);
 			orig(self);
 		}
 
