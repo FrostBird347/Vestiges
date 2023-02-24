@@ -14,8 +14,11 @@ namespace Vestiges {
 		private Vector2 lastLastPos;
 		public LightSource light;
 		public Color col;
+		public float sizeMult;
 		public float sin;
 		public Vector2 target;
+		public bool noTarget;
+		public float targetSwitchMult;
 		public bool exists;
 		BepInEx.Logging.ManualLogSource Logger;
 
@@ -23,13 +26,17 @@ namespace Vestiges {
 			Logger = newLogger;
 		}
 
-		public Vestige(Room room, Vector2 pos, Color colour) : base(room, pos, PluginEnums.Vestige) {
+		public Vestige(Room room, Vector2 pos, Color colour, int size) : base(room, pos, PluginEnums.Vestige) {
 			lastLastPos = pos;
 			sin = Random.value;
 			col = colour;
+			sizeMult = size / 2f;
 			target = pos;
+			noTarget = false;
+			targetSwitchMult = 1f;
 			exists = true;
 			this.room = room;
+			Logger = null;
 		}
 
 		public override void Reset(Vector2 resetPos) {
@@ -50,15 +57,23 @@ namespace Vestiges {
 			}
 			vel *= 0.95f;
 			vel.x = vel.x + dir.x * 0.3f;
-			vel.y = vel.y + dir.y * 0.2f;
-			//dir = Vector2.Lerp(dir, Custom.DegToVec(Random.value * 360f) * Mathf.Pow(Random.value, 0.75f), 0.4f).normalized;
-			dir = Vector2.Lerp(dir, Custom.DirVec(pos, target), Mathf.Pow(Random.value, 2f) * 0.65f);
+			vel.y = vel.y + dir.y * 0.3f;
+
+			if (Random.value > 0.95f * targetSwitchMult && !noTarget) {
+				noTarget = true;
+			} else if (Random.value > 0.75f && noTarget) {
+				noTarget = false;
+			}
+
+			if (!noTarget) {
+				dir = Vector2.Lerp(dir, Custom.DirVec(pos, target), Mathf.Pow(Random.value, 2f) * 0.65f);
+			} else {
+				dir = Vector2.Lerp(dir, Custom.DegToVec(Random.value * 360f) * Mathf.Pow(Random.value, 0.75f), 0.4f).normalized;
+			}
 
 			if (wantToBurrow) {
 				dir = Vector2.Lerp(dir, new Vector2(0f, -1f), 0.1f);
-			}// else if (base.OutOfBounds) {
-			 //	dir = Vector2.Lerp(dir, Custom.DirVec(pos, mySwarm.placedObject.pos), Mathf.InverseLerp(mySwarm.insectGroupData.Rad, mySwarm.insectGroupData.Rad + 100f, Vector2.Distance(pos, mySwarm.placedObject.pos)));
-			 //}
+			}
 
 			float num = TileScore(room.GetTilePosition(pos));
 			IntVector2 intVector = new IntVector2(0, 0);
@@ -71,7 +86,10 @@ namespace Vestiges {
 			vel += intVector.ToVector2() * 0.4f;
 
 			if (room.PointSubmerged(pos)) {
-				pos.y = room.FloatWaterLevel(pos.x);
+				vel *= 0.95f;
+				targetSwitchMult = 0.78f;
+			} else {
+				targetSwitchMult = 1;
 			}
 			sin += 1f / Mathf.Lerp(20f, 80f, Random.value);
 
@@ -82,8 +100,8 @@ namespace Vestiges {
 					room.AddObject(light);
 				}
 				light.setPos = new Vector2?(pos);
-				light.setAlpha = new float?(0.15f - 0.1f * Mathf.Sin(sin * 3.14159274f * 2f));
-				light.setRad = new float?(60f + 20f * Mathf.Sin(sin * 3.14159274f * 2f));
+				light.setAlpha = new float?(0.15f - 0.1f * Mathf.Sin(sin * 3.14159274f * 2f)) * sizeMult;
+				light.setRad = new float?(60f + 20f * Mathf.Sin(sin * 3.14159274f * 2f)) * sizeMult;
 			} else if (light != null) {
 				light.Destroy();
 				light = null;
@@ -109,7 +127,7 @@ namespace Vestiges {
 			sLeaser.sprites = new FSprite[1];
 
 			sLeaser.sprites[0] = new FSprite("pixel", true);
-			sLeaser.sprites[0].scaleX = 2f;
+			sLeaser.sprites[0].scaleX = 2f * sizeMult;
 			sLeaser.sprites[0].anchorY = 0f;
 			sLeaser.sprites[0].color = this.col;
 
@@ -120,7 +138,7 @@ namespace Vestiges {
 			sLeaser.sprites[0].x = Mathf.Lerp(this.lastPos.x, this.pos.x, timeStacker) - camPos.x;
 			sLeaser.sprites[0].y = Mathf.Lerp(this.lastPos.y, this.pos.y, timeStacker) - camPos.y;
 			sLeaser.sprites[0].rotation = Custom.AimFromOneVectorToAnother(Vector2.Lerp(this.lastLastPos, this.lastPos, timeStacker), Vector2.Lerp(this.lastPos, this.pos, timeStacker));
-			sLeaser.sprites[0].scaleY = Mathf.Max(2f, 2f + 1.1f * Vector2.Distance(Vector2.Lerp(this.lastLastPos, this.lastPos, timeStacker), Vector2.Lerp(this.lastPos, this.pos, timeStacker)));
+			sLeaser.sprites[0].scaleY = Mathf.Max(2f * sizeMult, (2f * sizeMult) + 0.55f * Vector2.Distance(Vector2.Lerp(this.lastLastPos, this.lastPos, timeStacker), Vector2.Lerp(this.lastPos, this.pos, timeStacker)));
 			base.DrawSprites(sLeaser, rCam, timeStacker, camPos);
 		}
 

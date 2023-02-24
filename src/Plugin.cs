@@ -4,6 +4,7 @@ using System;
 using System.Numerics;
 using UnityEngine;
 using Vector2 = UnityEngine.Vector2;
+using Random = UnityEngine.Random;
 using System.Linq;
 using static RoomCamera;
 using System.Collections.Generic;
@@ -55,10 +56,10 @@ namespace Vestiges {
 
 		private void SpawnFly(On.Player.orig_MovementUpdate orig, Player self, bool eu) {
 			orig(self, eu);
-			if (self.FoodInStomach > 0) {
+			if (self.FoodInStomach > 0 && Random.value > 0.75f) {
 				Vector2 spawnPos = self.mainBodyChunk.pos + new Vector2(0f, (self.mainBodyChunk.rad * 2));
-				Vestige newBug = new Vestige(self.room, spawnPos, new Color(0.25f, 0.75f, 1f));
-				newBug.SetupLogger(Logger);
+				Vestige newBug = new Vestige(self.room, spawnPos, new Color(Random.value, Random.value, Random.value), 1);
+				//newBug.SetupLogger(Logger);
 				self.room.AddObject(newBug);
 				vestigeList.Add(newBug);
 			}
@@ -71,10 +72,9 @@ namespace Vestiges {
 				if (vestigeList[i] != null && vestigeList[i].exists) {
 					vestigeList[i].Update(eu);
 				} else {
-					//vestigeList[i] = null;
-					//vestigeList.RemoveAt(i);
-					//Logger.LogInfo("REMOVEFLY_");
-					//i--;
+					vestigeList[i] = null;
+					vestigeList.RemoveAt(i);
+					i--;
 				}
 			}
 		}
