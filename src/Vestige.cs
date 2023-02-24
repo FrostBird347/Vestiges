@@ -26,12 +26,13 @@ namespace Vestiges {
 			Logger = newLogger;
 		}
 
-		public Vestige(Room room, Vector2 pos, Color colour, int size) : base(room, pos, PluginEnums.Vestige) {
+		public Vestige(Room room, Vector2 pos, Vector2 targt, Color colour, int size) : base(room, pos, PluginEnums.Vestige) {
 			lastLastPos = pos;
+			this.pos = pos;
 			sin = Random.value;
 			col = colour;
 			sizeMult = size / 2f;
-			target = pos;
+			target = targt;
 			noTarget = false;
 			targetSwitchMult = 1f;
 			exists = true;
