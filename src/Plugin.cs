@@ -26,7 +26,8 @@ namespace Vestiges {
 
 		Dictionary<string, Dictionary<string, List<VestigeSpawn>>> vestigeData;
 		List<Vestige> activeVestigeList;
-		ConditionalWeakTable<AbstractCreature, string> deathDict;
+		ConditionalWeakTable<Player, string> deathDict;
+		List<FailedDeathData> failedDeathCoords;
 
 		public void OnEnable() {
 			// Add hooks here
@@ -52,7 +53,8 @@ namespace Vestiges {
 
 				vestigeData = new Dictionary<string, Dictionary<string, List<VestigeSpawn>>>();
 				activeVestigeList = new List<Vestige>();
-				deathDict = new ConditionalWeakTable<AbstractCreature, string>();
+				deathDict = new ConditionalWeakTable<Player, string>();
+				failedDeathCoords = new List<FailedDeathData>();
 
 				try {
 					Options = new PluginOptions(this, Logger);
@@ -97,8 +99,8 @@ namespace Vestiges {
 		}
 
 		private void OnDeath(On.Player.orig_Die orig, Player self) {
+			Logger.LogInfo("OnDeath");
 			AddNewVestige(self, true);
-
 			orig(self);
 		}
 
@@ -106,52 +108,80 @@ namespace Vestiges {
 			orig(self, grasp);
 			Logger.LogInfo("Grabbed");
 			Logger.LogInfo(grasp.pacifying);
-			if (grasp.pacifying && grasp.grabber.abstractCreature.creatureTemplate.IsLizard) {
+			if (grasp.grabber.Template.IsLizard) {
 				AddNewVestige(self, false);
 			}
 		}
 
 		private void AddNewVestige(Player self, bool actuallyDead) {
 			string lastTimeRaw;
-			if (self.room.world.game.IsStorySession) {
-				if (!deathDict.TryGetValue(self.abstractCreature, out lastTimeRaw) || ((DateTime.Now.ToFileTime() - long.Parse(lastTimeRaw)) / 10000000) > 15) {
-					deathDict.Remove(self.abstractCreature);
-					deathDict.Add(self.abstractCreature, DateTime.Now.ToFileTime().ToString());
+			Logger.LogDebug("A");
+			Logger.LogDebug(self);
+			Logger.LogDebug(self.coord.Valid);
+			Logger.LogDebug(self.lastCoord.Valid);
+			Logger.LogDebug(self.room == null);
+			if ((self.room == null) && failedDeathCoords.Count == 0) {
+				Logger.LogDebug("bb");
+				FailedDeathData newFail = new FailedDeathData(self.coord, self.karmaFlowerGrowPos.Value, self.ShortCutColor());
+				Logger.LogDebug("cc");
+				failedDeathCoords.Add(newFail);
+				Logger.LogDebug(newFail.region);
+				Logger.LogDebug("dd");
+			} else if (self.room.world.game.IsStorySession) {
+				Logger.LogDebug("b");
+				if (!deathDict.TryGetValue(self, out lastTimeRaw) || ((DateTime.Now.ToFileTime() - long.Parse(lastTimeRaw)) / 10000000) > 15) {
+					Logger.LogDebug("c");
+					deathDict.Remove(self);
+					deathDict.Add(self, DateTime.Now.ToFileTime().ToString());
+					Logger.LogDebug("d");
 
 					string roomName = self.room.abstractRoom.name;
 					string regionName = self.room.world.region.name;
+					Logger.LogDebug("e");
 
 					if (!vestigeData.ContainsKey(regionName)) {
 						vestigeData.Add(regionName, new Dictionary<string, List<VestigeSpawn>>());
 					}
+					Logger.LogDebug("f");
 					if (!vestigeData[regionName].ContainsKey(roomName)) {
 						vestigeData[regionName].Add(roomName, new List<VestigeSpawn>());
 					}
+					Logger.LogDebug("g");
 
 					Vector2 safePos = self.mainBodyChunk.pos;
+					Logger.LogDebug("h");
 					if (self.karmaFlowerGrowPos.HasValue && self.karmaFlowerGrowPos.Value.Valid && self.room.abstractRoom.index == self.karmaFlowerGrowPos.Value.room) {
 						safePos = self.room.MiddleOfTile(self.karmaFlowerGrowPos.Value.x, self.karmaFlowerGrowPos.Value.y);
 					}
+					Logger.LogDebug("i");
 					VestigeSpawn newSpawn = new VestigeSpawn(roomName, regionName, self.ShortCutColor(), self.mainBodyChunk.pos, safePos);
 
+					Logger.LogDebug("j");
 					vestigeData[regionName][roomName].Add(newSpawn);
 
+					Logger.LogDebug("l");
 					Vestige newBug = new Vestige(self.room, newSpawn.spawn, newSpawn.target, newSpawn.colour, 2);
+					Logger.LogDebug("m");
 					self.room.AddObject(newBug);
+					Logger.LogDebug("n");
 					activeVestigeList.Add(newBug);
+					Logger.LogDebug("o");
 
 					Logger.LogDebug("Added new vestige at " + regionName + ":" + roomName + newSpawn.spawn + " targeting " + newSpawn.target);
 				} else {
 					Logger.LogDebug("Skipped adding additional vestige: the same player triggered this less than 15 seconds ago! (or they are already fully dead)");
 				}
 				if (actuallyDead) {
-					deathDict.Remove(self.abstractCreature);
-					deathDict.Add(self.abstractCreature, (DateTime.Now.ToFileTime() + ((long)10000000 * 3600)).ToString());
+					Logger.LogDebug("p");
+					deathDict.Remove(self);
+					Logger.LogDebug("q");
+					deathDict.Add(self, (DateTime.Now.ToFileTime() + ((long)10000000 * 3600)).ToString());
+					Logger.LogDebug("r");
 				}
 
 			}
-
 		}
 
 	}
+
 }
