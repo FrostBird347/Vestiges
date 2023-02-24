@@ -9,6 +9,7 @@ using System.Linq;
 using static RoomCamera;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
 
 // Allows access to private members
 #pragma warning disable CS0618
@@ -25,6 +26,7 @@ namespace Vestiges {
 
 		Dictionary<string, Dictionary<string, List<VestigeSpawn>>> vestigeData;
 		List<Vestige> activeVestigeList;
+		ConditionalWeakTable<AbstractCreature, string> deathDict;
 
 		public void OnEnable() {
 			// Add hooks here
@@ -32,7 +34,8 @@ namespace Vestiges {
 
 			On.Player.NewRoom += SpawnVestiges;
 			On.Player.Update += UpdateFly;
-			On.Player.PermaDie += AddNewVestige;
+			On.Player.Die += OnDeath;
+			On.Player.Grabbed += OnGrabDeath;
 			//On.Player.PermaDie;
 		}
 
@@ -49,6 +52,7 @@ namespace Vestiges {
 
 				vestigeData = new Dictionary<string, Dictionary<string, List<VestigeSpawn>>>();
 				activeVestigeList = new List<Vestige>();
+				deathDict = new ConditionalWeakTable<AbstractCreature, string>();
 
 				try {
 					Options = new PluginOptions(this, Logger);
@@ -92,33 +96,61 @@ namespace Vestiges {
 			}
 		}
 
-		private void AddNewVestige(On.Player.orig_PermaDie orig, Player self) {
-			if (self.room.world.game.IsStorySession) {
-
-				string roomName = self.room.abstractRoom.name;
-				string regionName = self.room.world.region.name;
-
-				if (!vestigeData.ContainsKey(regionName)) {
-					vestigeData.Add(regionName, new Dictionary<string, List<VestigeSpawn>>());
-				}
-				if (!vestigeData[regionName].ContainsKey(roomName)) {
-					vestigeData[regionName].Add(roomName, new List<VestigeSpawn>());
-				}
-
-				Vector2 safePos = self.mainBodyChunk.pos;
-				if (self.karmaFlowerGrowPos.HasValue && self.karmaFlowerGrowPos.Value.Valid && self.room.abstractRoom.index == self.karmaFlowerGrowPos.Value.room) {
-					safePos = new Vector2(self.karmaFlowerGrowPos.Value.x, self.karmaFlowerGrowPos.Value.y);
-				}
-				VestigeSpawn newSpawn = new VestigeSpawn(roomName, regionName, self.ShortCutColor(), self.mainBodyChunk.pos, safePos);
-
-				vestigeData[regionName][roomName].Add(newSpawn);
-
-				Vestige newBug = new Vestige(self.room, newSpawn.spawn, newSpawn.target, newSpawn.colour, 2);
-				self.room.AddObject(newBug);
-				activeVestigeList.Add(newBug);
-			}
+		private void OnDeath(On.Player.orig_Die orig, Player self) {
+			AddNewVestige(self, true);
 
 			orig(self);
+		}
+
+		private void OnGrabDeath(On.Player.orig_Grabbed orig, Player self, Creature.Grasp grasp) {
+			orig(self, grasp);
+			Logger.LogInfo("Grabbed");
+			Logger.LogInfo(grasp.pacifying);
+			if (grasp.pacifying && grasp.grabber.abstractCreature.creatureTemplate.IsLizard) {
+				AddNewVestige(self, false);
+			}
+		}
+
+		private void AddNewVestige(Player self, bool actuallyDead) {
+			string lastTimeRaw;
+			if (self.room.world.game.IsStorySession) {
+				if (!deathDict.TryGetValue(self.abstractCreature, out lastTimeRaw) || ((DateTime.Now.ToFileTime() - long.Parse(lastTimeRaw)) / 10000000) > 15) {
+					deathDict.Remove(self.abstractCreature);
+					deathDict.Add(self.abstractCreature, DateTime.Now.ToFileTime().ToString());
+
+					string roomName = self.room.abstractRoom.name;
+					string regionName = self.room.world.region.name;
+
+					if (!vestigeData.ContainsKey(regionName)) {
+						vestigeData.Add(regionName, new Dictionary<string, List<VestigeSpawn>>());
+					}
+					if (!vestigeData[regionName].ContainsKey(roomName)) {
+						vestigeData[regionName].Add(roomName, new List<VestigeSpawn>());
+					}
+
+					Vector2 safePos = self.mainBodyChunk.pos;
+					if (self.karmaFlowerGrowPos.HasValue && self.karmaFlowerGrowPos.Value.Valid && self.room.abstractRoom.index == self.karmaFlowerGrowPos.Value.room) {
+						safePos = self.room.MiddleOfTile(self.karmaFlowerGrowPos.Value.x, self.karmaFlowerGrowPos.Value.y);
+					}
+					VestigeSpawn newSpawn = new VestigeSpawn(roomName, regionName, self.ShortCutColor(), self.mainBodyChunk.pos, safePos);
+
+					vestigeData[regionName][roomName].Add(newSpawn);
+
+					Vestige newBug = new Vestige(self.room, newSpawn.spawn, newSpawn.target, newSpawn.colour, 2);
+					self.room.AddObject(newBug);
+					activeVestigeList.Add(newBug);
+
+					Logger.LogDebug("Added new vestige at " + regionName + ":" + roomName + newSpawn.spawn + " targeting " + newSpawn.target);
+				} else {
+					Logger.LogDebug("Skipped adding additional vestige: the same player triggered this less than 15 seconds ago! (or they are already fully dead)");
+				}
+				if (actuallyDead) {
+					deathDict.Remove(self.abstractCreature);
+					deathDict.Add(self.abstractCreature, (DateTime.Now.ToFileTime() + ((long)10000000 * 3600)).ToString());
+				}
+
+			}
+
 		}
 
 	}
