@@ -29,8 +29,6 @@ namespace Vestiges {
 
 			On.Player.MovementUpdate += SpawnFly;
 			On.Player.Update += UpdateFly;
-			On.GraphicsModule.DrawSprites += DrawFly;
-			On.GraphicsModule.InitiateSprites += ResetFly;
 		}
 
 		public void OnDisable() {
@@ -58,10 +56,10 @@ namespace Vestiges {
 		private void SpawnFly(On.Player.orig_MovementUpdate orig, Player self, bool eu) {
 			orig(self, eu);
 			if (self.FoodInStomach > 0) {
-				Logger.LogInfo("SPAWNFLY");
 				Vector2 spawnPos = self.mainBodyChunk.pos + new Vector2(0f, (self.mainBodyChunk.rad * 2));
 				Vestige newBug = new Vestige(self.room, spawnPos, new Color(0.25f, 0.75f, 1f));
 				newBug.SetupLogger(Logger);
+				self.room.AddObject(newBug);
 				vestigeList.Add(newBug);
 			}
 		}
@@ -69,9 +67,7 @@ namespace Vestiges {
 		private void UpdateFly(On.Player.orig_Update orig, Player self, bool eu) {
 			orig(self, eu);
 
-			Logger.LogInfo("UPDATEFLY: " + vestigeList.Count);
 			for (int i = 0; i < vestigeList.Count; i++) {
-				//Logger.LogInfo("UPDATEFLY_");
 				if (vestigeList[i] != null && vestigeList[i].exists) {
 					vestigeList[i].Update(eu);
 				} else {
@@ -81,44 +77,6 @@ namespace Vestiges {
 					//i--;
 				}
 			}
-		}
-
-		private void DrawFly(On.GraphicsModule.orig_DrawSprites orig, GraphicsModule self, SpriteLeaser sLeaser, RoomCamera rCam, float timeStacker, Vector2 camPos) {
-			orig(self, sLeaser, rCam, timeStacker, camPos);
-
-			Logger.LogInfo("DRAWFLY");
-			for (int i = 0; i < vestigeList.Count; i++) {
-				Logger.LogInfo("DRAWFLY_");
-				if (vestigeList[i] != null && vestigeList[i].exists) {
-					if (!vestigeList[i].initSprite) {
-						Logger.LogInfo("InitiateSprites");
-						vestigeList[i].InitiateSprites(rCam);
-					}
-					Logger.LogInfo("DrawSprites");
-					Logger.LogInfo(vestigeList[i].spriteIndex);
-					Logger.LogInfo(rCam.spriteLeasers.Count);
-					Logger.LogInfo(i + "/" + vestigeList.Count);
-					vestigeList[i].DrawSprites(rCam.spriteLeasers[vestigeList[i].spriteIndex], rCam, timeStacker, camPos);
-				} else if (vestigeList[i] != null && !vestigeList[i].exists) {
-					Logger.LogInfo("REMOVEFLY_");
-					Logger.LogInfo(vestigeList[i].spriteIndex);
-					Logger.LogInfo(rCam.spriteLeasers.Count);
-					rCam.spriteLeasers[vestigeList[i].spriteIndex].deleteMeNextFrame = true;
-					vestigeList[i].light.Destroy();
-					vestigeList[i] = null;
-				} else if (vestigeList[i] == null) {
-					Logger.LogInfo("CLEANFLY_");
-					vestigeList.RemoveAt(i);
-					i--;
-				}
-			}
-		}
-
-		private void ResetFly(On.GraphicsModule.orig_InitiateSprites orig, GraphicsModule self, SpriteLeaser sLeaser, RoomCamera rCam) {
-			Logger.LogInfo("RESETFLY");
-			//rCam.ClearAllSprites();
-			vestigeList.Clear();
-			orig(self, sLeaser, rCam);
 		}
 
 	}

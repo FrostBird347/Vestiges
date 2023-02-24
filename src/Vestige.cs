@@ -17,8 +17,6 @@ namespace Vestiges {
 		public float sin;
 		public Vector2 target;
 		public bool exists;
-		public bool initSprite = false;
-		public int spriteIndex = 0;
 		BepInEx.Logging.ManualLogSource Logger;
 
 		public void SetupLogger(BepInEx.Logging.ManualLogSource newLogger) {
@@ -107,35 +105,23 @@ namespace Vestiges {
 			return Random.value / (float)Math.Abs(room.aimap.getAItile(tile).floorAltitude - 4) / (float)Math.Abs(room.aimap.getAItile(tile).terrainProximity - 4);
 		}
 
-		public void InitiateSprites(RoomCamera rCam) {
-			//sLeaser.sprites = new FSprite[1];
-			spriteIndex = rCam.spriteLeasers.Count;
-			Logger.LogInfo(rCam.spriteLeasers.Count);
-			FSprite[] newSprite = new FSprite[] { new FSprite("pixel", true) };
+		public override void InitiateSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam) {
+			sLeaser.sprites = new FSprite[1];
 
-			RoomCamera.SpriteLeaser sLeaser = new RoomCamera.SpriteLeaser(this, rCam);
-
-			sLeaser.sprites = newSprite;
-
+			sLeaser.sprites[0] = new FSprite("pixel", true);
 			sLeaser.sprites[0].scaleX = 2f;
 			sLeaser.sprites[0].anchorY = 0f;
-			sLeaser.sprites[0].color = col;
-			AddToContainer(sLeaser, rCam, null);
-			initSprite = true;
-			rCam.spriteLeasers.Add(sLeaser);
-			Logger.LogInfo(rCam.spriteLeasers.Count);
+			sLeaser.sprites[0].color = this.col;
+
+			this.AddToContainer(sLeaser, rCam, null);
 		}
 
 		public override void DrawSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, float timeStacker, Vector2 camPos) {
-			Logger.LogInfo("A");
-			Logger.LogInfo(spriteIndex);
-			sLeaser.sprites[0].x = Mathf.Lerp(lastPos.x, pos.x, timeStacker) - camPos.x;
-			sLeaser.sprites[0].y = Mathf.Lerp(lastPos.y, pos.y, timeStacker) - camPos.y;
-			sLeaser.sprites[0].rotation = Custom.AimFromOneVectorToAnother(Vector2.Lerp(lastLastPos, lastPos, timeStacker), Vector2.Lerp(lastPos, pos, timeStacker));
-			sLeaser.sprites[0].scaleY = Mathf.Max(2f, 2f + 1.1f * Vector2.Distance(Vector2.Lerp(lastLastPos, lastPos, timeStacker), Vector2.Lerp(lastPos, pos, timeStacker)));
-			Logger.LogInfo("B");
+			sLeaser.sprites[0].x = Mathf.Lerp(this.lastPos.x, this.pos.x, timeStacker) - camPos.x;
+			sLeaser.sprites[0].y = Mathf.Lerp(this.lastPos.y, this.pos.y, timeStacker) - camPos.y;
+			sLeaser.sprites[0].rotation = Custom.AimFromOneVectorToAnother(Vector2.Lerp(this.lastLastPos, this.lastPos, timeStacker), Vector2.Lerp(this.lastPos, this.pos, timeStacker));
+			sLeaser.sprites[0].scaleY = Mathf.Max(2f, 2f + 1.1f * Vector2.Distance(Vector2.Lerp(this.lastLastPos, this.lastPos, timeStacker), Vector2.Lerp(this.lastPos, this.pos, timeStacker)));
 			base.DrawSprites(sLeaser, rCam, timeStacker, camPos);
-			Logger.LogInfo("C");
 		}
 
 		public override void ApplyPalette(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, RoomPalette palette) {
