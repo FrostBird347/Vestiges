@@ -31,7 +31,6 @@ namespace Vestiges {
 		bool isStory;
 
 		public void OnEnable() {
-			// Add hooks here
 			On.RainWorld.OnModsInit += Init;
 
 			On.Player.NewRoom += SpawnVestiges;
@@ -39,12 +38,6 @@ namespace Vestiges {
 			On.Player.Die += OnDeath;
 			On.Player.Grabbed += OnGrabDeath;
 			On.RainWorldGame.GoToDeathScreen += ResetQueue;
-			//On.Player.PermaDie;
-		}
-
-		public void OnDisable() {
-			Logger.LogInfo("Disabled plugin!");
-			//Vestige
 		}
 
 		private void Init(On.RainWorld.orig_OnModsInit orig, RainWorld self) {
@@ -58,8 +51,6 @@ namespace Vestiges {
 				vestigeSpawnQueue = new List<VestigeSpawnQueue>();
 				lastVestigeSpawns = new List<WorldCoordinate>();
 
-				DownloadVestiges();
-
 				try {
 					Options = new PluginOptions(this, Logger);
 					MachineConnector.SetRegisteredOI("frostbird347.vestiges", Options);
@@ -67,6 +58,10 @@ namespace Vestiges {
 				} catch (Exception err) {
 					Logger.LogError(err);
 					configWorking = false;
+				}
+
+				if (configWorking) {
+					DownloadVestiges();
 				}
 			}
 		}
@@ -81,7 +76,7 @@ namespace Vestiges {
 				for (int i = 0; i < vestigeData[regionName][roomName].Count; i++) {
 
 					VestigeSpawn spawnInfo = vestigeData[regionName][roomName][i];
-					Vestige newBug = new Vestige(newRoom, new Vector2(0, 0), spawnInfo.spawn, spawnInfo.target, spawnInfo.colour, 1, Logger);
+					Vestige newBug = new Vestige(newRoom, new Vector2(0, 0), spawnInfo.spawn, spawnInfo.target, spawnInfo.colour, 1);
 					newRoom.AddObject(newBug);
 					activeVestigeList.Add(newBug);
 				}
@@ -107,15 +102,12 @@ namespace Vestiges {
 		}
 
 		private void OnDeath(On.Player.orig_Die orig, Player self) {
-			Logger.LogInfo("OnDeath");
 			QueueNewVestige(self, true);
 			orig(self);
 		}
 
 		private void OnGrabDeath(On.Player.orig_Grabbed orig, Player self, Creature.Grasp grasp) {
 			orig(self, grasp);
-			Logger.LogInfo("Grabbed");
-			Logger.LogInfo(grasp.pacifying);
 			if (grasp.grabber.Template.IsLizard) {
 				QueueNewVestige(self, false);
 			}
@@ -151,12 +143,8 @@ namespace Vestiges {
 			if (isStory && vestigeSpawnQueue.Count != 0) {
 				int queueIndex = Random.Range(0, vestigeSpawnQueue.Count);
 				bool skip = false;
-				Logger.LogDebug("CheckNewVestige");
-				Logger.LogDebug(vestigeSpawnQueue.Count);
+
 				if (!lastVestigeSpawns.Contains(vestigeSpawnQueue[queueIndex].safeCoord)) {
-					Logger.LogDebug("AddNewVestige");
-					Logger.LogDebug(vestigeSpawnQueue[queueIndex].room);
-					Logger.LogDebug(vestigeSpawnQueue[queueIndex].region);
 
 					if (!vestigeData.ContainsKey(vestigeSpawnQueue[queueIndex].region)) {
 						vestigeData.Add(vestigeSpawnQueue[queueIndex].region, new Dictionary<string, List<VestigeSpawn>>());
@@ -174,8 +162,7 @@ namespace Vestiges {
 					UploadVestige(newSpawn);
 
 					if (self.room != null && self.room.abstractRoom.name == vestigeSpawnQueue[queueIndex].room) {
-						Logger.LogDebug("SpawnNewVestige");
-						Vestige newBug = new Vestige(self.room, new Vector2(0, 0), newSpawn.spawn, newSpawn.target, newSpawn.colour, 2, Logger);
+						Vestige newBug = new Vestige(self.room, new Vector2(0, 0), newSpawn.spawn, newSpawn.target, newSpawn.colour, 2);
 						self.room.AddObject(newBug);
 						activeVestigeList.Add(newBug);
 					}
@@ -184,10 +171,6 @@ namespace Vestiges {
 				if (!skip) {
 					vestigeSpawnQueue.RemoveAt(queueIndex);
 				}
-			} else if (!isStory && lastVestigeSpawns.Count != 0) {
-				Logger.LogDebug("ClearLastVestigeSpawns");
-				Logger.LogDebug(lastVestigeSpawns.Count);
-				lastVestigeSpawns.Clear();
 			}
 		}
 

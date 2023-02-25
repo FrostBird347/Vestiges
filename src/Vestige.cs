@@ -26,7 +26,7 @@ namespace Vestiges {
 			Logger = newLogger;
 		}
 
-		public Vestige(Room _room, Vector2 _nullpos, WorldCoordinate _pos, WorldCoordinate _targt, Color _colour, int _size, BepInEx.Logging.ManualLogSource _Logger) : base(_room, _nullpos, PluginEnums.Vestige) {
+		public Vestige(Room _room, Vector2 _nullpos, WorldCoordinate _pos, WorldCoordinate _targt, Color _colour, int _size) : base(_room, _nullpos, PluginEnums.Vestige) {
 
 			lastLastPos = _room.MiddleOfTile(_pos);
 			pos = _room.MiddleOfTile(_pos);
@@ -40,12 +40,7 @@ namespace Vestiges {
 			targetSwitchMult = 1f;
 			exists = true;
 			room = _room;
-			Logger = _Logger;
-
-			_Logger.LogDebug("NEW_Vestige");
-			_Logger.LogDebug(_room.abstractRoom.name);
-			_Logger.LogDebug(pos);
-			_Logger.LogDebug(target);
+			Logger = null;
 		}
 
 		public override void Reset(Vector2 resetPos) {
