@@ -27,6 +27,7 @@ namespace Vestiges {
 
 		Dictionary<string, Dictionary<string, List<VestigeSpawn>>> vestigeData;
 		List<Vestige> activeVestigeList;
+		string LastRoomName;
 		List<VestigeSpawnQueue> vestigeSpawnQueue;
 		List<WorldCoordinate> lastVestigeSpawns;
 		bool isStory;
@@ -52,6 +53,7 @@ namespace Vestiges {
 
 				vestigeData = new Dictionary<string, Dictionary<string, List<VestigeSpawn>>>();
 				activeVestigeList = new List<Vestige>();
+				LastRoomName = "_";
 				vestigeSpawnQueue = new List<VestigeSpawnQueue>();
 				lastVestigeSpawns = new List<WorldCoordinate>();
 				isDownloaded = false;
@@ -77,13 +79,17 @@ namespace Vestiges {
 			string roomName = newRoom.abstractRoom.name;
 			string regionName = newRoom.world.region.name;
 
-			if (!self.dead && vestigeData.ContainsKey(regionName) && vestigeData[regionName].ContainsKey(roomName)) {
-				for (int i = 0; i < vestigeData[regionName][roomName].Count; i++) {
+			if (roomName != LastRoomName) {
+				LastRoomName = roomName;
 
-					VestigeSpawn spawnInfo = vestigeData[regionName][roomName][i];
-					Vestige newBug = new Vestige(newRoom, new Vector2(0, 0), spawnInfo.spawn, spawnInfo.target, spawnInfo.colour, 1);
-					newRoom.AddObject(newBug);
-					activeVestigeList.Add(newBug);
+				if (!self.dead && vestigeData.ContainsKey(regionName) && vestigeData[regionName].ContainsKey(roomName)) {
+					for (int i = 0; i < vestigeData[regionName][roomName].Count; i++) {
+
+						VestigeSpawn spawnInfo = vestigeData[regionName][roomName][i];
+						Vestige newBug = new Vestige(newRoom, new Vector2(0, 0), spawnInfo.spawn, spawnInfo.target, spawnInfo.colour, 1);
+						newRoom.AddObject(newBug);
+						activeVestigeList.Add(newBug);
+					}
 				}
 			}
 		}
