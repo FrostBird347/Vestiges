@@ -86,7 +86,7 @@ namespace Vestiges {
 			orig(self, newRoom);
 
 			string roomName = newRoom.abstractRoom.name;
-			string regionName = newRoom.world.region.name;
+			string regionName = roomName.Split('_')[0];
 
 			if (roomName != LastRoomName) {
 				LastRoomName = roomName;
