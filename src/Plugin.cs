@@ -235,11 +235,12 @@ namespace Vestiges {
 		}
 
 		private async void DownloadVestiges() {
-			//ClearVestiges();
+			ClearVestiges();
+			Logger.LogInfo("Downloading Vestiges...");
 
 			string rawDataset = await httpClient.GetStringAsync("https://docs.google.com/spreadsheet/ccc?key=" + Options.DownloadID.Value + "&output=csv");
 			if (rawDataset == null || rawDataset == "") {
-				Logger.LogError("[DownloadVestiges] rawDataset is either null or empty!");
+				Logger.LogError("rawDataset is either null or empty!");
 				isDownloaded = false;
 				return;
 			}
@@ -276,12 +277,37 @@ namespace Vestiges {
 					vestigeData[currentValues[2]][currentValues[1]].Add(currentVestige);
 
 				} else {
-					Logger.LogError("[DownloadVestiges] skipped entry on row " + r + " due to invalid formatting!");
+					Logger.LogError("skipped entry on row " + r + " due to invalid formatting!");
 				}
 			}
 			Logger.LogInfo(validEntries + "/" + (totalEntries) + " Vestiges were loaded");
 
 			isDownloaded = true;
+			Logger.LogInfo("Downloaded Vestiges");
+		}
+
+		private void ClearVestiges() {
+			Logger.LogInfo("Clearing all saved Vestiges...");
+
+			LastRoomName = "_";
+			for (int i = activeVestigeList.Count - 1; i >= 0; i--) {
+				if (!activeVestigeList[i].exists) {
+					activeVestigeList.RemoveAt(i);
+				}
+			}
+			vestigeSpawnQueue.Clear();
+			lastVestigeSpawns.Clear();
+
+			//Might not be nessecary, but just incase this should help avoid memory leaks
+			foreach (string currentRegion in vestigeData.Keys) {
+				foreach (string currentRoom in vestigeData[currentRegion].Keys) {
+					vestigeData[currentRegion][currentRoom].Clear();
+				}
+				vestigeData[currentRegion].Clear();
+			}
+			vestigeData.Clear();
+
+			Logger.LogInfo("Cleared all Vestiges");
 		}
 
 	}
