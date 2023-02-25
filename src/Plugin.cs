@@ -38,6 +38,7 @@ namespace Vestiges {
 			On.Player.Update += UpdateFly;
 			On.Player.Die += OnDeath;
 			On.Player.Grabbed += OnGrabDeath;
+			On.RainWorldGame.GoToDeathScreen += ResetQueue;
 			//On.Player.PermaDie;
 		}
 
@@ -56,6 +57,8 @@ namespace Vestiges {
 				activeVestigeList = new List<Vestige>();
 				vestigeSpawnQueue = new List<VestigeSpawnQueue>();
 				lastVestigeSpawns = new List<WorldCoordinate>();
+
+				DownloadVestiges();
 
 				try {
 					Options = new PluginOptions(this, Logger);
@@ -88,13 +91,12 @@ namespace Vestiges {
 		private void UpdateFly(On.Player.orig_Update orig, Player self, bool eu) {
 			orig(self, eu);
 
-			for (int i = 0; i < activeVestigeList.Count; i++) {
+			for (int i = activeVestigeList.Count - 1; i >= 0; i--) {
 				if (activeVestigeList[i] != null && activeVestigeList[i].exists) {
 					activeVestigeList[i].Update(eu);
 				} else {
 					activeVestigeList[i] = null;
 					activeVestigeList.RemoveAt(i);
-					i--;
 				}
 			}
 
@@ -169,6 +171,8 @@ namespace Vestiges {
 
 					lastVestigeSpawns.Add(vestigeSpawnQueue[queueIndex].safeCoord);
 
+					UploadVestige(newSpawn);
+
 					if (self.room != null && self.room.abstractRoom.name == vestigeSpawnQueue[queueIndex].room) {
 						Logger.LogDebug("SpawnNewVestige");
 						Vestige newBug = new Vestige(self.room, new Vector2(0, 0), newSpawn.spawn, newSpawn.target, newSpawn.colour, 2, Logger);
@@ -186,6 +190,36 @@ namespace Vestiges {
 				lastVestigeSpawns.Clear();
 			}
 		}
+
+		private void ResetQueue(On.RainWorldGame.orig_GoToDeathScreen orig, RainWorldGame self) {
+			orig(self);
+
+			Logger.LogDebug("PreResetQueue: " + lastVestigeSpawns.Count);
+			for (int li = lastVestigeSpawns.Count - 1; li >= 0; li--) {
+				bool found = false;
+				for (int ni = 0; ni < vestigeSpawnQueue.Count; ni++) {
+					if (lastVestigeSpawns[li] == vestigeSpawnQueue[ni].safeCoord) {
+						found = true;
+					}
+				}
+
+				if (!found) {
+					lastVestigeSpawns.RemoveAt(li);
+				}
+			}
+			Logger.LogDebug("PostResetQueue: " + lastVestigeSpawns.Count);
+		}
+
+		private void UploadVestige(VestigeSpawn newVest) {
+			Logger.LogDebug("UploadVestige");
+			Logger.LogDebug(newVest.colour);
+			Logger.LogDebug(newVest.room);
+			Logger.LogDebug(newVest.region);
+			Logger.LogDebug(newVest.spawn);
+			Logger.LogDebug(newVest.target);
+		}
+
+		private void DownloadVestiges() { }
 
 	}
 
