@@ -10,6 +10,7 @@ using static RoomCamera;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Net.Http;
 
 // Allows access to private members
 #pragma warning disable CS0618
@@ -29,6 +30,7 @@ namespace Vestiges {
 		List<VestigeSpawnQueue> vestigeSpawnQueue;
 		List<WorldCoordinate> lastVestigeSpawns;
 		bool isStory;
+		private static readonly HttpClient httpClient = new HttpClient();
 
 		public void OnEnable() {
 			On.RainWorld.OnModsInit += Init;
@@ -200,9 +202,24 @@ namespace Vestiges {
 			Logger.LogDebug(newVest.region);
 			Logger.LogDebug(newVest.spawn);
 			Logger.LogDebug(newVest.target);
+
+			Dictionary<string, string> encodedSpawnData = new Dictionary<string, string>();
+			encodedSpawnData.Add("entry.46667845", newVest.room);
+			encodedSpawnData.Add("entry.799920119", newVest.region);
+			encodedSpawnData.Add("entry.2120884595", newVest.colour.r.ToString());
+			encodedSpawnData.Add("entry.559370072", newVest.colour.g.ToString());
+			encodedSpawnData.Add("entry.1818183584", newVest.colour.b.ToString());
+			encodedSpawnData.Add("entry.685257973", newVest.spawn.x.ToString());
+			encodedSpawnData.Add("entry.622593087", newVest.spawn.y.ToString());
+			encodedSpawnData.Add("entry.1964557942", newVest.target.x.ToString());
+			encodedSpawnData.Add("entry.787154321", newVest.target.y.ToString());
+
+			httpClient.PostAsync("https://docs.google.com/forms/u/0/d/e/" + Options.UploadID.Value + "/formResponse", new FormUrlEncodedContent(encodedSpawnData));
 		}
 
-		private void DownloadVestiges() { }
+		private async void DownloadVestiges() {
+			string rawDataset = await httpClient.GetStringAsync("https://docs.google.com/spreadsheet/ccc?key=" + Options.DownloadID.Value + "&output=csv");
+		}
 
 	}
 

@@ -15,8 +15,8 @@ namespace Vestiges {
 
 		public PluginOptions(Plugin pluginInstance, ManualLogSource logSource) {
 			Logger = logSource;
-			UploadID = config.Bind("UploadID", "UNSET");
-			DownloadID = config.Bind("DownloadID", "UNSET");
+			UploadID = config.Bind("UploadID", "1FAIpQLSdkBHGRNMbJQGJ0A89CJfDrA98uy1DBL3VQuys9s91i41P1JA");
+			DownloadID = config.Bind("DownloadID", "1mUk-KQp7Kv4U-ODamQwb7DUWNewvyXLucVu72bVqFZU");
 		}
 
 		public override void Initialize() {
