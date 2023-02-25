@@ -26,8 +26,9 @@ namespace Vestiges {
 
 		Dictionary<string, Dictionary<string, List<VestigeSpawn>>> vestigeData;
 		List<Vestige> activeVestigeList;
-		ConditionalWeakTable<Player, string> deathDict;
-		List<FailedDeathData> failedDeathCoords;
+		List<VestigeSpawnQueue> vestigeSpawnQueue;
+		List<WorldCoordinate> lastVestigeSpawns;
+		bool isStory;
 
 		public void OnEnable() {
 			// Add hooks here
@@ -53,8 +54,8 @@ namespace Vestiges {
 
 				vestigeData = new Dictionary<string, Dictionary<string, List<VestigeSpawn>>>();
 				activeVestigeList = new List<Vestige>();
-				deathDict = new ConditionalWeakTable<Player, string>();
-				failedDeathCoords = new List<FailedDeathData>();
+				vestigeSpawnQueue = new List<VestigeSpawnQueue>();
+				lastVestigeSpawns = new List<WorldCoordinate>();
 
 				try {
 					Options = new PluginOptions(this, Logger);
@@ -77,7 +78,7 @@ namespace Vestiges {
 				for (int i = 0; i < vestigeData[regionName][roomName].Count; i++) {
 
 					VestigeSpawn spawnInfo = vestigeData[regionName][roomName][i];
-					Vestige newBug = new Vestige(newRoom, spawnInfo.spawn, spawnInfo.target, spawnInfo.colour, 1);
+					Vestige newBug = new Vestige(newRoom, new Vector2(0, 0), spawnInfo.spawn, spawnInfo.target, spawnInfo.colour, 1, Logger);
 					newRoom.AddObject(newBug);
 					activeVestigeList.Add(newBug);
 				}
@@ -96,11 +97,16 @@ namespace Vestiges {
 					i--;
 				}
 			}
+
+			if (self.room != null) {
+				isStory = self.room.world.game.IsStorySession;
+				AddNewVestige(self);
+			}
 		}
 
 		private void OnDeath(On.Player.orig_Die orig, Player self) {
 			Logger.LogInfo("OnDeath");
-			AddNewVestige(self, true);
+			QueueNewVestige(self, true);
 			orig(self);
 		}
 
@@ -109,76 +115,75 @@ namespace Vestiges {
 			Logger.LogInfo("Grabbed");
 			Logger.LogInfo(grasp.pacifying);
 			if (grasp.grabber.Template.IsLizard) {
-				AddNewVestige(self, false);
+				QueueNewVestige(self, false);
 			}
 		}
 
-		private void AddNewVestige(Player self, bool actuallyDead) {
-			string lastTimeRaw;
-			Logger.LogDebug("A");
-			Logger.LogDebug(self);
-			Logger.LogDebug(self.coord.Valid);
-			Logger.LogDebug(self.lastCoord.Valid);
-			Logger.LogDebug(self.room == null);
-			if ((self.room == null) && failedDeathCoords.Count == 0) {
-				Logger.LogDebug("bb");
-				FailedDeathData newFail = new FailedDeathData(self.coord, self.karmaFlowerGrowPos.Value, self.ShortCutColor());
-				Logger.LogDebug("cc");
-				failedDeathCoords.Add(newFail);
-				Logger.LogDebug(newFail.region);
-				Logger.LogDebug("dd");
-			} else if (self.room.world.game.IsStorySession) {
-				Logger.LogDebug("b");
-				if (!deathDict.TryGetValue(self, out lastTimeRaw) || ((DateTime.Now.ToFileTime() - long.Parse(lastTimeRaw)) / 10000000) > 15) {
-					Logger.LogDebug("c");
-					deathDict.Remove(self);
-					deathDict.Add(self, DateTime.Now.ToFileTime().ToString());
-					Logger.LogDebug("d");
+		private void QueueNewVestige(Player self, bool actuallyDead) {
+			if (self.room == null && actuallyDead && isStory) {
 
-					string roomName = self.room.abstractRoom.name;
-					string regionName = self.room.world.region.name;
-					Logger.LogDebug("e");
-
-					if (!vestigeData.ContainsKey(regionName)) {
-						vestigeData.Add(regionName, new Dictionary<string, List<VestigeSpawn>>());
-					}
-					Logger.LogDebug("f");
-					if (!vestigeData[regionName].ContainsKey(roomName)) {
-						vestigeData[regionName].Add(roomName, new List<VestigeSpawn>());
-					}
-					Logger.LogDebug("g");
-
-					Vector2 safePos = self.mainBodyChunk.pos;
-					Logger.LogDebug("h");
-					if (self.karmaFlowerGrowPos.HasValue && self.karmaFlowerGrowPos.Value.Valid && self.room.abstractRoom.index == self.karmaFlowerGrowPos.Value.room) {
-						safePos = self.room.MiddleOfTile(self.karmaFlowerGrowPos.Value.x, self.karmaFlowerGrowPos.Value.y);
-					}
-					Logger.LogDebug("i");
-					VestigeSpawn newSpawn = new VestigeSpawn(roomName, regionName, self.ShortCutColor(), self.mainBodyChunk.pos, safePos);
-
-					Logger.LogDebug("j");
-					vestigeData[regionName][roomName].Add(newSpawn);
-
-					Logger.LogDebug("l");
-					Vestige newBug = new Vestige(self.room, newSpawn.spawn, newSpawn.target, newSpawn.colour, 2);
-					Logger.LogDebug("m");
-					self.room.AddObject(newBug);
-					Logger.LogDebug("n");
-					activeVestigeList.Add(newBug);
-					Logger.LogDebug("o");
-
-					Logger.LogDebug("Added new vestige at " + regionName + ":" + roomName + newSpawn.spawn + " targeting " + newSpawn.target);
-				} else {
-					Logger.LogDebug("Skipped adding additional vestige: the same player triggered this less than 15 seconds ago! (or they are already fully dead)");
-				}
-				if (actuallyDead) {
-					Logger.LogDebug("p");
-					deathDict.Remove(self);
-					Logger.LogDebug("q");
-					deathDict.Add(self, (DateTime.Now.ToFileTime() + ((long)10000000 * 3600)).ToString());
-					Logger.LogDebug("r");
+				WorldCoordinate safePos = self.coord;
+				if (self.karmaFlowerGrowPos.HasValue && self.karmaFlowerGrowPos.Value.Valid && self.coord.room == self.karmaFlowerGrowPos.Value.room) {
+					safePos = self.karmaFlowerGrowPos.Value;
 				}
 
+				VestigeSpawnQueue newSpawn = new VestigeSpawnQueue(self.coord, safePos, self.ShortCutColor());
+				vestigeSpawnQueue.Add(newSpawn);
+
+			} else if (self.room != null && self.room.world.game.IsStorySession) {
+
+				WorldCoordinate safePos = self.coord;
+				if (self.karmaFlowerGrowPos.HasValue && self.karmaFlowerGrowPos.Value.Valid && self.coord.room == self.karmaFlowerGrowPos.Value.room) {
+					safePos = self.karmaFlowerGrowPos.Value;
+				}
+
+				VestigeSpawnQueue newSpawn = new VestigeSpawnQueue(self.coord, safePos, self.ShortCutColor());
+				vestigeSpawnQueue.Add(newSpawn);
+
+				AddNewVestige(self);
+			}
+
+		}
+
+		private void AddNewVestige(Player self) {
+			if (isStory && vestigeSpawnQueue.Count != 0) {
+				int queueIndex = Random.Range(0, vestigeSpawnQueue.Count);
+				bool skip = false;
+				Logger.LogDebug("CheckNewVestige");
+				Logger.LogDebug(vestigeSpawnQueue.Count);
+				if (!lastVestigeSpawns.Contains(vestigeSpawnQueue[queueIndex].safeCoord)) {
+					Logger.LogDebug("AddNewVestige");
+					Logger.LogDebug(vestigeSpawnQueue[queueIndex].room);
+					Logger.LogDebug(vestigeSpawnQueue[queueIndex].region);
+
+					if (!vestigeData.ContainsKey(vestigeSpawnQueue[queueIndex].region)) {
+						vestigeData.Add(vestigeSpawnQueue[queueIndex].region, new Dictionary<string, List<VestigeSpawn>>());
+					}
+
+					if (!vestigeData[vestigeSpawnQueue[queueIndex].region].ContainsKey(vestigeSpawnQueue[queueIndex].room)) {
+						vestigeData[vestigeSpawnQueue[queueIndex].region].Add(vestigeSpawnQueue[queueIndex].room, new List<VestigeSpawn>());
+					}
+
+					VestigeSpawn newSpawn = new VestigeSpawn(vestigeSpawnQueue[queueIndex].room, vestigeSpawnQueue[queueIndex].region, vestigeSpawnQueue[queueIndex].colour, vestigeSpawnQueue[queueIndex].coord, vestigeSpawnQueue[queueIndex].safeCoord);
+					vestigeData[vestigeSpawnQueue[queueIndex].region][vestigeSpawnQueue[queueIndex].room].Add(newSpawn);
+
+					lastVestigeSpawns.Add(vestigeSpawnQueue[queueIndex].safeCoord);
+
+					if (self.room != null && self.room.abstractRoom.name == vestigeSpawnQueue[queueIndex].room) {
+						Logger.LogDebug("SpawnNewVestige");
+						Vestige newBug = new Vestige(self.room, new Vector2(0, 0), newSpawn.spawn, newSpawn.target, newSpawn.colour, 2, Logger);
+						self.room.AddObject(newBug);
+						activeVestigeList.Add(newBug);
+					}
+				}
+
+				if (!skip) {
+					vestigeSpawnQueue.RemoveAt(queueIndex);
+				}
+			} else if (!isStory && lastVestigeSpawns.Count != 0) {
+				Logger.LogDebug("ClearLastVestigeSpawns");
+				Logger.LogDebug(lastVestigeSpawns.Count);
+				lastVestigeSpawns.Clear();
 			}
 		}
 

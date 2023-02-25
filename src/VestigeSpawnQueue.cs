@@ -2,16 +2,16 @@
 using UnityEngine;
 
 namespace Vestiges {
-	public struct FailedDeathData {
+	public struct VestigeSpawnQueue {
 		public readonly string room;
 		public readonly string region;
 		public readonly WorldCoordinate coord;
 		public readonly WorldCoordinate safeCoord;
 		public readonly Color colour;
 
-		public FailedDeathData(WorldCoordinate _coord, WorldCoordinate _safeCoord, Color _colour) {
+		public VestigeSpawnQueue(WorldCoordinate _coord, WorldCoordinate _safeCoord, Color _colour) {
 			coord = _coord;
-			room = _coord.ResolveRoomName();
+			room = _safeCoord.ResolveRoomName();
 			region = _coord.SaveToString().Split('_')[0];
 
 			if (_safeCoord.Valid && _safeCoord.ResolveRoomName() == _coord.ResolveRoomName()) {
