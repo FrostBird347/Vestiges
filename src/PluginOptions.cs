@@ -50,7 +50,7 @@ namespace Vestiges {
 			//	RefreshVestiges.OnClick += Vestiges.Plugin.DownloadVestiges;
 			RefreshVestiges.greyedOut = true;
 
-			OpLabel VestigeStatus = new OpLabel(140F, 460f, "Failed to download Vestiges!");
+			OpLabel VestigeStatus = new OpLabel(150F, 460f, "Failed to download Vestiges!");
 			if (Vestiges.Plugin.isDownloaded) VestigeStatus.text = "Vestiges have been downloaded";
 
 			OpTab opTab = new OpTab(this, "Options");
@@ -87,8 +87,8 @@ namespace Vestiges {
 				new OpTextBox(EntryG, new Vector2(200f,160f), 400f) { description = "Only change this if you know what you are doing!" },
 				new OpLabel(10f, 130f, "entry8 ID"),
 				new OpTextBox(EntryH, new Vector2(200f,130f), 400f) { description = "Only change this if you know what you are doing!" },
-				new OpLabel(10f, 70f, "entry9 ID"),
-				new OpTextBox(EntryI, new Vector2(200f,70f), 400f) { description = "Only change this if you know what you are doing!" }
+				new OpLabel(10f, 100f, "entry9 ID"),
+				new OpTextBox(EntryI, new Vector2(200f,100f), 400f) { description = "Only change this if you know what you are doing!" }
 			};
 			opTab.AddItems(UIArrPlayerOptions);
 		}
