@@ -28,7 +28,7 @@ namespace Vestiges {
 
 		Dictionary<string, Dictionary<string, List<VestigeSpawn>>> vestigeData;
 		List<Vestige> activeVestigeList;
-		string LastRoomName;
+		string lastRoomName;
 		List<VestigeSpawnQueue> vestigeSpawnQueue;
 		List<WorldCoordinate> lastVestigeSpawns;
 		bool isStory;
@@ -54,7 +54,7 @@ namespace Vestiges {
 
 				vestigeData = new Dictionary<string, Dictionary<string, List<VestigeSpawn>>>();
 				activeVestigeList = new List<Vestige>();
-				LastRoomName = "_";
+				lastRoomName = "_";
 				vestigeSpawnQueue = new List<VestigeSpawnQueue>();
 				lastVestigeSpawns = new List<WorldCoordinate>();
 				isDownloaded = false;
@@ -88,8 +88,8 @@ namespace Vestiges {
 			string roomName = newRoom.abstractRoom.name;
 			string regionName = roomName.Split('_')[0];
 
-			if (roomName != LastRoomName) {
-				LastRoomName = roomName;
+			if (roomName != lastRoomName) {
+				lastRoomName = roomName;
 
 				if (!self.dead && vestigeData.ContainsKey(regionName) && vestigeData[regionName].ContainsKey(roomName)) {
 					for (int i = 0; i < vestigeData[regionName][roomName].Count && i < Options.VestigeLimit.Value; i++) {
@@ -210,6 +210,8 @@ namespace Vestiges {
 				}
 			}
 			Logger.LogDebug("PostResetQueue: " + lastVestigeSpawns.Count);
+
+			lastRoomName = "_";
 		}
 
 		private void UploadVestige(VestigeSpawn newVest) {
@@ -257,7 +259,7 @@ namespace Vestiges {
 				//[Timestamp, room, region, colour.r, colour.g, colour.b, spawn.x, spawn.y, target.x, target.y]
 				//[0        , 1   , 2     , 3       , 4       , 5       , 6      , 7      , 8       , 9       ]
 				string[] currentValues = rawRows[r].Trim('\r').Split(',');
-				if (currentValues != new string[] { "", "", "", "", "", "", "", "", "", "" }) {
+				if (currentValues == new string[] { "", "", "", "", "", "", "", "", "", "" }) {
 					totalEntries--;
 				} else if (currentValues.Length == 10) {
 					validEntries++;
@@ -289,7 +291,7 @@ namespace Vestiges {
 		private void ClearVestiges() {
 			Logger.LogInfo("Clearing all saved Vestiges...");
 
-			LastRoomName = "_";
+			lastRoomName = "_";
 			for (int i = activeVestigeList.Count - 1; i >= 0; i--) {
 				if (!activeVestigeList[i].exists) {
 					activeVestigeList.RemoveAt(i);
