@@ -26,12 +26,12 @@ namespace Vestiges {
 			Logger = newLogger;
 		}
 
-		public Vestige(Room _room, Vector2 _nullpos, WorldCoordinate _pos, WorldCoordinate _targt, Color _colour, int _size) : base(_room, _nullpos, PluginEnums.Vestige) {
+		public Vestige(Room _room, Vector2 _nullpos, VestigeCoord _pos, VestigeCoord _targt, Color _colour, int _size) : base(_room, _nullpos, PluginEnums.Vestige) {
 
-			lastLastPos = _room.MiddleOfTile(_pos);
-			pos = _room.MiddleOfTile(_pos);
+			lastLastPos = _room.MiddleOfTile(_pos.x, _pos.y);
+			pos = _room.MiddleOfTile(_pos.x, _pos.y);
 
-			target = _room.MiddleOfTile(_targt);
+			target = _room.MiddleOfTile(_targt.x, _targt.y);
 
 			sin = Random.value;
 			col = _colour;

@@ -6,10 +6,10 @@ namespace Vestiges {
 		public readonly string room;
 		public readonly string region;
 		public Color colour;
-		public WorldCoordinate spawn;
-		public WorldCoordinate target;
+		public VestigeCoord spawn;
+		public VestigeCoord target;
 
-		public VestigeSpawn(string _room, string _region, Color _colour, WorldCoordinate _spawn, WorldCoordinate _target) {
+		public VestigeSpawn(string _room, string _region, Color _colour, VestigeCoord _spawn, VestigeCoord _target) {
 			room = _room;
 			region = _region;
 			colour = _colour;

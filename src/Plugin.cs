@@ -158,7 +158,7 @@ namespace Vestiges {
 						vestigeData[vestigeSpawnQueue[queueIndex].region].Add(vestigeSpawnQueue[queueIndex].room, new List<VestigeSpawn>());
 					}
 
-					VestigeSpawn newSpawn = new VestigeSpawn(vestigeSpawnQueue[queueIndex].room, vestigeSpawnQueue[queueIndex].region, vestigeSpawnQueue[queueIndex].colour, vestigeSpawnQueue[queueIndex].coord, vestigeSpawnQueue[queueIndex].safeCoord);
+					VestigeSpawn newSpawn = new VestigeSpawn(vestigeSpawnQueue[queueIndex].room, vestigeSpawnQueue[queueIndex].region, vestigeSpawnQueue[queueIndex].colour, new VestigeCoord(vestigeSpawnQueue[queueIndex].coord), new VestigeCoord(vestigeSpawnQueue[queueIndex].safeCoord));
 					vestigeData[vestigeSpawnQueue[queueIndex].region][vestigeSpawnQueue[queueIndex].room].Add(newSpawn);
 
 					lastVestigeSpawns.Add(vestigeSpawnQueue[queueIndex].safeCoord);
@@ -250,8 +250,8 @@ namespace Vestiges {
 					}
 
 					Color currentColor = new Color(float.Parse(currentValues[3]), float.Parse(currentValues[4]), float.Parse(currentValues[5]));
-					WorldCoordinate currentSpawn = new WorldCoordinate(currentValues[1], int.Parse(currentValues[6]), int.Parse(currentValues[7]), -1);
-					WorldCoordinate currentTarget = new WorldCoordinate(currentValues[1], int.Parse(currentValues[8]), int.Parse(currentValues[9]), -1);
+					VestigeCoord currentSpawn = new VestigeCoord(int.Parse(currentValues[6]), int.Parse(currentValues[7]));
+					VestigeCoord currentTarget = new VestigeCoord(int.Parse(currentValues[8]), int.Parse(currentValues[9]));
 
 					VestigeSpawn currentVestige = new VestigeSpawn(currentValues[2], currentValues[1], currentColor, currentSpawn, currentTarget);
 					vestigeData[currentValues[2]][currentValues[1]].Add(currentVestige);
