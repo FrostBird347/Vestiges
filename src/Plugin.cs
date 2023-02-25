@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Net.Http;
+using System.Globalization;
 
 // Allows access to private members
 #pragma warning disable CS0618
@@ -69,6 +70,14 @@ namespace Vestiges {
 
 				if (configWorking) {
 					DownloadVestiges();
+				} else {
+					Logger.LogFatal("Config failed to load, this mod has somewhat disabled itself for safety!");
+
+					On.Player.NewRoom -= SpawnVestiges;
+					On.Player.Update -= UpdateFly;
+					On.Player.Die -= OnDeath;
+					On.Player.Grabbed -= OnGrabDeath;
+					On.RainWorldGame.GoToDeathScreen -= ResetQueue;
 				}
 			}
 		}
@@ -83,7 +92,7 @@ namespace Vestiges {
 				LastRoomName = roomName;
 
 				if (!self.dead && vestigeData.ContainsKey(regionName) && vestigeData[regionName].ContainsKey(roomName)) {
-					for (int i = 0; i < vestigeData[regionName][roomName].Count; i++) {
+					for (int i = 0; i < vestigeData[regionName][roomName].Count && i < Options.VestigeLimit.Value; i++) {
 
 						VestigeSpawn spawnInfo = vestigeData[regionName][roomName][i];
 						Vestige newBug = new Vestige(newRoom, new Vector2(0, 0), spawnInfo.spawn, spawnInfo.target, spawnInfo.colour, 1);
@@ -212,15 +221,15 @@ namespace Vestiges {
 			Logger.LogDebug(newVest.target);
 
 			Dictionary<string, string> encodedSpawnData = new Dictionary<string, string>();
-			encodedSpawnData.Add("entry.46667845", newVest.room);
-			encodedSpawnData.Add("entry.799920119", newVest.region);
-			encodedSpawnData.Add("entry.2120884595", newVest.colour.r.ToString());
-			encodedSpawnData.Add("entry.559370072", newVest.colour.g.ToString());
-			encodedSpawnData.Add("entry.1818183584", newVest.colour.b.ToString());
-			encodedSpawnData.Add("entry.685257973", newVest.spawn.x.ToString());
-			encodedSpawnData.Add("entry.622593087", newVest.spawn.y.ToString());
-			encodedSpawnData.Add("entry.1964557942", newVest.target.x.ToString());
-			encodedSpawnData.Add("entry.787154321", newVest.target.y.ToString());
+			encodedSpawnData.Add("entry." + Options.EntryA.Value, newVest.room);
+			encodedSpawnData.Add("entry." + Options.EntryB.Value, newVest.region);
+			encodedSpawnData.Add("entry." + Options.EntryC.Value, newVest.colour.r.ToString());
+			encodedSpawnData.Add("entry." + Options.EntryD.Value, newVest.colour.g.ToString());
+			encodedSpawnData.Add("entry." + Options.EntryE.Value, newVest.colour.b.ToString());
+			encodedSpawnData.Add("entry." + Options.EntryF.Value, newVest.spawn.x.ToString());
+			encodedSpawnData.Add("entry." + Options.EntryG.Value, newVest.spawn.y.ToString());
+			encodedSpawnData.Add("entry." + Options.EntryH.Value, newVest.target.x.ToString());
+			encodedSpawnData.Add("entry." + Options.EntryI.Value, newVest.target.y.ToString());
 
 			httpClient.PostAsync("https://docs.google.com/forms/u/0/d/e/" + Options.UploadID.Value + "/formResponse", new FormUrlEncodedContent(encodedSpawnData));
 		}
@@ -240,12 +249,14 @@ namespace Vestiges {
 			}
 
 			int validEntries = 0;
+			int totalEntries = rawRows.Length - 1;
 			for (int r = 1; r < rawRows.Length; r++) {
 				//[Timestamp, room, region, colour.r, colour.g, colour.b, spawn.x, spawn.y, target.x, target.y]
 				//[0        , 1   , 2     , 3       , 4       , 5       , 6      , 7      , 8       , 9       ]
 				string[] currentValues = rawRows[r].Trim('\r').Split(',');
-
-				if (currentValues.Length == 10) {
+				if (currentValues != new string[] { "", "", "", "", "", "", "", "", "", "" }) {
+					totalEntries--;
+				} else if (currentValues.Length == 10) {
 					validEntries++;
 
 					if (!vestigeData.ContainsKey(currentValues[2])) {
@@ -255,9 +266,9 @@ namespace Vestiges {
 						vestigeData[currentValues[2]].Add(currentValues[1], new List<VestigeSpawn>());
 					}
 
-					Color currentColor = new Color(float.Parse(currentValues[3]), float.Parse(currentValues[4]), float.Parse(currentValues[5]));
-					VestigeCoord currentSpawn = new VestigeCoord(int.Parse(currentValues[6]), int.Parse(currentValues[7]));
-					VestigeCoord currentTarget = new VestigeCoord(int.Parse(currentValues[8]), int.Parse(currentValues[9]));
+					Color currentColor = new Color(float.Parse(currentValues[3], NumberStyles.Float), float.Parse(currentValues[4], NumberStyles.Float), float.Parse(currentValues[5], NumberStyles.Float));
+					VestigeCoord currentSpawn = new VestigeCoord(int.Parse(currentValues[6], NumberStyles.Integer | NumberStyles.AllowExponent), int.Parse(currentValues[7], NumberStyles.Integer | NumberStyles.AllowExponent));
+					VestigeCoord currentTarget = new VestigeCoord(int.Parse(currentValues[8], NumberStyles.Integer | NumberStyles.AllowExponent), int.Parse(currentValues[9], NumberStyles.Integer | NumberStyles.AllowExponent));
 
 					VestigeSpawn currentVestige = new VestigeSpawn(currentValues[2], currentValues[1], currentColor, currentSpawn, currentTarget);
 					vestigeData[currentValues[2]][currentValues[1]].Add(currentVestige);
@@ -266,7 +277,7 @@ namespace Vestiges {
 					Logger.LogError("[DownloadVestiges] skipped entry on row " + r + " due to invalid formatting!");
 				}
 			}
-			Logger.LogInfo(validEntries + "/" + (rawRows.Length - 1) + " Vestiges were loaded");
+			Logger.LogInfo(validEntries + "/" + (totalEntries) + " Vestiges were loaded");
 
 			isDownloaded = true;
 		}
