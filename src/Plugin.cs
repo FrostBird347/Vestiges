@@ -30,7 +30,9 @@ namespace Vestiges {
 		List<VestigeSpawnQueue> vestigeSpawnQueue;
 		List<WorldCoordinate> lastVestigeSpawns;
 		bool isStory;
+
 		private static readonly HttpClient httpClient = new HttpClient();
+		bool isDownloaded;
 
 		public void OnEnable() {
 			On.RainWorld.OnModsInit += Init;
@@ -52,6 +54,7 @@ namespace Vestiges {
 				activeVestigeList = new List<Vestige>();
 				vestigeSpawnQueue = new List<VestigeSpawnQueue>();
 				lastVestigeSpawns = new List<WorldCoordinate>();
+				isDownloaded = false;
 
 				try {
 					Options = new PluginOptions(this, Logger);
@@ -151,7 +154,6 @@ namespace Vestiges {
 					if (!vestigeData.ContainsKey(vestigeSpawnQueue[queueIndex].region)) {
 						vestigeData.Add(vestigeSpawnQueue[queueIndex].region, new Dictionary<string, List<VestigeSpawn>>());
 					}
-
 					if (!vestigeData[vestigeSpawnQueue[queueIndex].region].ContainsKey(vestigeSpawnQueue[queueIndex].room)) {
 						vestigeData[vestigeSpawnQueue[queueIndex].region].Add(vestigeSpawnQueue[queueIndex].room, new List<VestigeSpawn>());
 					}
@@ -218,7 +220,49 @@ namespace Vestiges {
 		}
 
 		private async void DownloadVestiges() {
+			//ClearVestiges();
+
 			string rawDataset = await httpClient.GetStringAsync("https://docs.google.com/spreadsheet/ccc?key=" + Options.DownloadID.Value + "&output=csv");
+			if (rawDataset == null || rawDataset == "") {
+				Logger.LogError("[DownloadVestiges] rawDataset is either null or empty!");
+				isDownloaded = false;
+			}
+
+			string[] rawRows = rawDataset.Split('\n');
+			if (rawRows.Length <= 0 || rawRows[0] != "Timestamp,room,region,colour.r,colour.g,colour.b,spawn.x,spawn.y,target.x,target.y\r") {
+				isDownloaded = false;
+			}
+
+			int validEntries = 0;
+			for (int r = 1; r < rawRows.Length; r++) {
+				//[Timestamp, room, region, colour.r, colour.g, colour.b, spawn.x, spawn.y, target.x, target.y]
+				//[0        , 1   , 2     , 3       , 4       , 5       , 6      , 7      , 8       , 9       ]
+				string[] currentValues = rawRows[r].Trim('\r').Split(',');
+
+				if (currentValues.Length == 10) {
+					validEntries++;
+
+					if (!vestigeData.ContainsKey(currentValues[2])) {
+						vestigeData.Add(currentValues[2], new Dictionary<string, List<VestigeSpawn>>());
+					}
+					if (!vestigeData[currentValues[2]].ContainsKey(currentValues[1])) {
+						vestigeData[currentValues[2]].Add(currentValues[1], new List<VestigeSpawn>());
+					}
+
+					Color currentColor = new Color(float.Parse(currentValues[3]), float.Parse(currentValues[4]), float.Parse(currentValues[5]));
+					WorldCoordinate currentSpawn = new WorldCoordinate(currentValues[1], int.Parse(currentValues[6]), int.Parse(currentValues[7]), -1);
+					WorldCoordinate currentTarget = new WorldCoordinate(currentValues[1], int.Parse(currentValues[8]), int.Parse(currentValues[9]), -1);
+
+					VestigeSpawn currentVestige = new VestigeSpawn(currentValues[2], currentValues[1], currentColor, currentSpawn, currentTarget);
+					vestigeData[currentValues[2]][currentValues[1]].Add(currentVestige);
+
+				} else {
+					Logger.LogError("[DownloadVestiges] skipped entry on row " + r + " due to invalid formatting!");
+				}
+			}
+			Logger.LogInfo(validEntries + "/" + (rawRows.Length - 1) + " Vestiges were loaded");
+
+			isDownloaded = true;
 		}
 
 	}
