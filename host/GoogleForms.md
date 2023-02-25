@@ -1,6 +1,6 @@
 # Google Form Layout
 
-The form must not require users to log in and needs to output the data to [google sheets](./GoogleSheets.md).
+The form must not require users to log in and needs to output the data to [Google Sheets](./GoogleSheets.md).
 
 All questions below should be set to required:
 
