@@ -34,7 +34,7 @@ namespace Vestiges {
 		bool isStory;
 
 		private static readonly HttpClient httpClient = new HttpClient();
-		bool isDownloaded;
+		public static bool isDownloaded;
 
 		public void OnEnable() {
 			On.RainWorld.OnModsInit += Init;
@@ -241,11 +241,13 @@ namespace Vestiges {
 			if (rawDataset == null || rawDataset == "") {
 				Logger.LogError("[DownloadVestiges] rawDataset is either null or empty!");
 				isDownloaded = false;
+				return;
 			}
 
 			string[] rawRows = rawDataset.Split('\n');
 			if (rawRows.Length <= 0 || rawRows[0] != "Timestamp,room,region,colour.r,colour.g,colour.b,spawn.x,spawn.y,target.x,target.y\r") {
 				isDownloaded = false;
+				return;
 			}
 
 			int validEntries = 0;
