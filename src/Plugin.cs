@@ -20,7 +20,7 @@ using System.Globalization;
 
 namespace Vestiges {
 
-	[BepInPlugin("frostbird347.vestiges", "Vestiges", "0.9.1")]
+	[BepInPlugin("frostbird347.vestiges", "Vestiges", "0.9.2")]
 	public sealed class Plugin : BaseUnityPlugin {
 		bool init;
 		private PluginOptions Options = null;
