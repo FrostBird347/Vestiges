@@ -16,4 +16,4 @@ So, what exactly does this mod do?
 
 Well upon death or being grabbed by a lizard, a ~~modified firefly~~ Vestige is created at your current location and through a very advanced system called uh... Google Forms and Google Slides, your new Vestige will be uploaded and accessible to everyone else (when they next restart the game) for a month!
 
-I got the idea of ~~ab~~using google forms and sheets a year ago from a small game called [Radio Bubbles](https://ash-k.itch.io/radiobubble/devlog/343058/radio-bubbles-postmortem).
+I got the idea of ~~ab~~using Google Forms and Sheets a year ago from a small game called [Radio Bubbles](https://ash-k.itch.io/radiobubble/devlog/343058/radio-bubbles-postmortem).
