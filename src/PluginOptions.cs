@@ -51,7 +51,7 @@ namespace Vestiges {
 			RefreshVestiges.greyedOut = true;
 
 			OpLabel VestigeStatus = new OpLabel(150F, 460f, "Failed to download Vestiges!");
-			if (Vestiges.Plugin.isDownloaded) VestigeStatus.text = "Vestiges have been downloaded";
+			if (Vestiges.Plugin.isDownloaded) VestigeStatus.text = "Vestiges have been downloaded (" + Vestiges.Plugin.vestigeCount + " loaded)";
 
 			OpTab opTab = new OpTab(this, "Options");
 			this.Tabs = new[]

@@ -27,6 +27,7 @@ namespace Vestiges {
 		bool configWorking = false;
 
 		Dictionary<string, Dictionary<string, List<VestigeSpawn>>> vestigeData;
+		List<string> rawDownloads;
 		List<Vestige> activeVestigeList;
 		string lastRoomName;
 		List<VestigeSpawnQueue> vestigeSpawnQueue;
@@ -36,6 +37,7 @@ namespace Vestiges {
 
 		private static readonly HttpClient httpClient = new HttpClient();
 		public static bool isDownloaded;
+		public static int vestigeCount;
 
 		public void OnEnable() {
 			On.RainWorld.OnModsInit += Init;
@@ -44,7 +46,7 @@ namespace Vestiges {
 			On.Player.Update += UpdateFly;
 			On.Player.Die += OnDeath;
 			On.Player.Grabbed += OnGrabDeath;
-			On.RainWorldGame.GoToDeathScreen += ResetQueue;
+			On.RainWorldGame.ctor += StartCycle;
 		}
 
 		private void Init(On.RainWorld.orig_OnModsInit orig, RainWorld self) {
@@ -54,12 +56,14 @@ namespace Vestiges {
 				init = true;
 
 				vestigeData = new Dictionary<string, Dictionary<string, List<VestigeSpawn>>>();
+				rawDownloads = new List<string>();
 				activeVestigeList = new List<Vestige>();
 				lastRoomName = "_";
 				vestigeSpawnQueue = new List<VestigeSpawnQueue>();
 				vestigeUploadLimiter = 150;
 				lastVestigeSpawns = new List<WorldCoordinate>();
 				isDownloaded = false;
+				vestigeCount = 0;
 
 				try {
 					Options = new PluginOptions(this, Logger);
@@ -71,7 +75,8 @@ namespace Vestiges {
 				}
 
 				if (configWorking) {
-					DownloadVestiges();
+					ClearVestiges();
+					DownloadVestiges(true);
 				} else {
 					Logger.LogFatal("Config failed to load, this mod has somewhat disabled itself for safety!");
 
@@ -79,7 +84,7 @@ namespace Vestiges {
 					On.Player.Update -= UpdateFly;
 					On.Player.Die -= OnDeath;
 					On.Player.Grabbed -= OnGrabDeath;
-					On.RainWorldGame.GoToDeathScreen -= ResetQueue;
+					On.RainWorldGame.ctor -= StartCycle;
 				}
 			}
 		}
@@ -187,6 +192,7 @@ namespace Vestiges {
 					vestigeData[vestigeSpawnQueue[queueIndex].region][vestigeSpawnQueue[queueIndex].room].Add(newSpawn);
 
 					lastVestigeSpawns.Add(vestigeSpawnQueue[queueIndex].safeCoord);
+					vestigeCount++;
 
 					UploadVestige(newSpawn);
 
@@ -203,9 +209,13 @@ namespace Vestiges {
 			}
 		}
 
-		private void ResetQueue(On.RainWorldGame.orig_GoToDeathScreen orig, RainWorldGame self) {
-			orig(self);
+		private void StartCycle(On.RainWorldGame.orig_ctor orig, RainWorldGame self, ProcessManager manager) {
+			orig(self, manager);
 
+			DownloadVestiges(false);
+		}
+
+		private void ResetQueue() {
 			Logger.LogDebug("PreResetQueue: " + lastVestigeSpawns.Count);
 			for (int li = lastVestigeSpawns.Count - 1; li >= 0; li--) {
 				bool found = false;
@@ -237,28 +247,42 @@ namespace Vestiges {
 			encodedSpawnData.Add("entry." + Options.EntryI.Value, newVest.target.y.ToString());
 
 			httpClient.PostAsync("https://docs.google.com/forms/u/0/d/e/" + Options.UploadID.Value + "/formResponse", new FormUrlEncodedContent(encodedSpawnData));
+
+			rawDownloads.Add(
+				newVest.room + "," +
+				newVest.region + "," +
+				ColorUtility.ToHtmlStringRGB(newVest.colour) + "," +
+				newVest.spawn.x.ToString() + "," +
+				newVest.spawn.y.ToString() + "," +
+				newVest.target.x.ToString() + "," +
+				newVest.target.y.ToString() + ","
+				);
 		}
 
-		private async void DownloadVestiges() {
-			ClearVestiges();
-			Logger.LogInfo("Downloading Vestiges...");
+		private async void DownloadVestiges(bool firstRun) {
+			Logger.LogDebug("Downloading Vestiges...");
 
 			string rawDataset = await httpClient.GetStringAsync("https://docs.google.com/spreadsheet/ccc?key=" + Options.DownloadID.Value + "&output=csv");
 			if (rawDataset == null || rawDataset == "") {
 				Logger.LogError("rawDataset is either null or empty!");
-				isDownloaded = false;
+				if (firstRun) {
+					isDownloaded = false;
+				}
 				return;
 			}
 
 			string[] rawRows = rawDataset.Split('\n');
 			if (rawRows.Length <= 0 || !rawRows[0].Trim('\r').StartsWith("Timestamp,room,region,colour.r,colour.g,colour.b,spawn.x,spawn.y,target.x,target.y")) {
 				Logger.LogError("rawDataset is not formatted correclty!");
-				isDownloaded = false;
+				if (firstRun) {
+					isDownloaded = false;
+				}
 				return;
 			}
 
 			int validEntries = 0;
 			int totalEntries = rawRows.Length - 1;
+			int newEntries = 0;
 			for (int r = 1; r < rawRows.Length; r++) {
 				//[Timestamp, room, region, colour.r, colour.g, colour.b, spawn.x, spawn.y, target.x, target.y]
 				//[0        , 1   , 2     , 3       , 4       , 5       , 6      , 7      , 8       , 9       ]
@@ -282,21 +306,36 @@ namespace Vestiges {
 					DateTime currentTimestamp = DateTime.SpecifyKind(DateTime.ParseExact(currentValues[0], "dd/MM/yyyy HH:mm:ss", CultureInfo.InvariantCulture), DateTimeKind.Utc);
 					bool currentIsNew = ((DateTime.UtcNow - currentTimestamp).TotalHours <= 24);
 
-					VestigeSpawn currentVestige = new VestigeSpawn(currentValues[2], currentValues[1], currentColor, currentSpawn, currentTarget, currentIsNew);
-					vestigeData[currentValues[2]][currentValues[1]].Add(currentVestige);
+					string rawDlCheck =
+						currentValues[1] + "," +
+						currentValues[2] + "," +
+						ColorUtility.ToHtmlStringRGB(currentColor) + "," +
+						currentValues[6] + "," +
+						currentValues[7] + "," +
+						currentValues[8] + "," +
+						currentValues[9];
+
+					if (!rawDownloads.Contains(rawDlCheck)) {
+
+						VestigeSpawn currentVestige = new VestigeSpawn(currentValues[2], currentValues[1], currentColor, currentSpawn, currentTarget, currentIsNew);
+						vestigeData[currentValues[2]][currentValues[1]].Add(currentVestige);
+						vestigeCount++;
+
+						rawDownloads.Add(rawDlCheck);
+						newEntries++;
+					}
 
 				} else {
 					Logger.LogError("skipped entry on row " + r + " due to invalid formatting!");
 				}
 			}
-			Logger.LogInfo(validEntries + "/" + (totalEntries) + " Vestiges were loaded");
+			Logger.LogDebug(validEntries + "/" + (totalEntries) + " Vestiges were downloaded (" + newEntries + " new, " + vestigeCount + " loaded)");
 
 			isDownloaded = true;
-			Logger.LogInfo("Downloaded Vestiges");
 		}
 
 		private void ClearVestiges() {
-			Logger.LogInfo("Clearing all saved Vestiges...");
+			Logger.LogDebug("Clearing all saved Vestiges...");
 
 			lastRoomName = "_";
 			for (int i = activeVestigeList.Count - 1; i >= 0; i--) {
@@ -304,7 +343,7 @@ namespace Vestiges {
 					activeVestigeList.RemoveAt(i);
 				}
 			}
-			vestigeSpawnQueue.Clear();
+			ResetQueue();
 			lastVestigeSpawns.Clear();
 
 			//Might not be nessecary, but just incase this should help avoid memory leaks
@@ -315,8 +354,10 @@ namespace Vestiges {
 				vestigeData[currentRegion].Clear();
 			}
 			vestigeData.Clear();
+			rawDownloads.Clear();
+			vestigeCount = 0;
 
-			Logger.LogInfo("Cleared all Vestiges");
+			Logger.LogDebug("Cleared all Vestiges");
 		}
 
 	}
