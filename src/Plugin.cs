@@ -57,7 +57,7 @@ namespace Vestiges {
 				activeVestigeList = new List<Vestige>();
 				lastRoomName = "_";
 				vestigeSpawnQueue = new List<VestigeSpawnQueue>();
-				vestigeUploadLimiter = 0;
+				vestigeUploadLimiter = 150;
 				lastVestigeSpawns = new List<WorldCoordinate>();
 				isDownloaded = false;
 
@@ -162,8 +162,8 @@ namespace Vestiges {
 		}
 
 		private void AddNewVestige(Player self) {
-			if (isStory && vestigeSpawnQueue.Count != 0 && vestigeUploadLimiter <= 50) vestigeUploadLimiter++;
-			if (isStory && vestigeSpawnQueue.Count != 0 && vestigeUploadLimiter >= 50) {
+			if (isStory && vestigeUploadLimiter <= 150) vestigeUploadLimiter++;
+			if (isStory && vestigeSpawnQueue.Count != 0 && vestigeUploadLimiter >= 150) {
 				int queueIndex = Random.Range(0, vestigeSpawnQueue.Count);
 				bool skip = false;
 				vestigeUploadLimiter = 0;
