@@ -8,15 +8,15 @@ namespace Vestiges {
 		public Color colour;
 		public VestigeCoord spawn;
 		public VestigeCoord target;
-		public bool isNew;
+		public DateTime time;
 
-		public VestigeSpawn(string _room, string _region, Color _colour, VestigeCoord _spawn, VestigeCoord _target, bool _isNew) {
+		public VestigeSpawn(string _room, string _region, Color _colour, VestigeCoord _spawn, VestigeCoord _target, DateTime _time) {
 			room = _room;
 			region = _region;
 			colour = _colour;
 			spawn = _spawn;
 			target = _target;
-			isNew = _isNew;
+			time = _time;
 		}
 	}
 }

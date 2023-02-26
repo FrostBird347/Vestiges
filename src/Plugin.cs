@@ -104,7 +104,7 @@ namespace Vestiges {
 						VestigeSpawn spawnInfo = vestigeData[regionName][roomName][i];
 
 						int currentSize = 1;
-						if (spawnInfo.isNew) {
+						if ((DateTime.UtcNow - spawnInfo.time).TotalHours <= 24) {
 							currentSize = 2;
 						}
 
@@ -188,7 +188,7 @@ namespace Vestiges {
 						vestigeData[vestigeSpawnQueue[queueIndex].region].Add(vestigeSpawnQueue[queueIndex].room, new List<VestigeSpawn>());
 					}
 
-					VestigeSpawn newSpawn = new VestigeSpawn(vestigeSpawnQueue[queueIndex].room, vestigeSpawnQueue[queueIndex].region, vestigeSpawnQueue[queueIndex].colour, new VestigeCoord(vestigeSpawnQueue[queueIndex].coord), new VestigeCoord(vestigeSpawnQueue[queueIndex].safeCoord), true);
+					VestigeSpawn newSpawn = new VestigeSpawn(vestigeSpawnQueue[queueIndex].room, vestigeSpawnQueue[queueIndex].region, vestigeSpawnQueue[queueIndex].colour, new VestigeCoord(vestigeSpawnQueue[queueIndex].coord), new VestigeCoord(vestigeSpawnQueue[queueIndex].safeCoord), DateTime.UtcNow);
 					vestigeData[vestigeSpawnQueue[queueIndex].region][vestigeSpawnQueue[queueIndex].room].Add(newSpawn);
 
 					lastVestigeSpawns.Add(vestigeSpawnQueue[queueIndex].safeCoord);
@@ -302,9 +302,7 @@ namespace Vestiges {
 					Color currentColor = new Color(float.Parse(currentValues[3], NumberStyles.Float), float.Parse(currentValues[4], NumberStyles.Float), float.Parse(currentValues[5], NumberStyles.Float));
 					VestigeCoord currentSpawn = new VestigeCoord(int.Parse(currentValues[6], NumberStyles.Integer | NumberStyles.AllowExponent), int.Parse(currentValues[7], NumberStyles.Integer | NumberStyles.AllowExponent));
 					VestigeCoord currentTarget = new VestigeCoord(int.Parse(currentValues[8], NumberStyles.Integer | NumberStyles.AllowExponent), int.Parse(currentValues[9], NumberStyles.Integer | NumberStyles.AllowExponent));
-
 					DateTime currentTimestamp = DateTime.SpecifyKind(DateTime.ParseExact(currentValues[0], "dd/MM/yyyy HH:mm:ss", CultureInfo.InvariantCulture), DateTimeKind.Utc);
-					bool currentIsNew = ((DateTime.UtcNow - currentTimestamp).TotalHours <= 24);
 
 					string rawDlCheck =
 						currentValues[1] + "," +
@@ -317,7 +315,7 @@ namespace Vestiges {
 
 					if (!rawDownloads.Contains(rawDlCheck)) {
 
-						VestigeSpawn currentVestige = new VestigeSpawn(currentValues[2], currentValues[1], currentColor, currentSpawn, currentTarget, currentIsNew);
+						VestigeSpawn currentVestige = new VestigeSpawn(currentValues[2], currentValues[1], currentColor, currentSpawn, currentTarget, currentTimestamp);
 						vestigeData[currentValues[2]][currentValues[1]].Add(currentVestige);
 						vestigeCount++;
 
