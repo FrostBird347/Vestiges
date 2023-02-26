@@ -10,8 +10,8 @@ namespace Vestiges {
 		private readonly ManualLogSource Logger;
 
 		public readonly Configurable<int> VestigeLimit;
-		public readonly Configurable<string> UploadID;
 		public readonly Configurable<string> DownloadID;
+		public readonly Configurable<string> UploadID;
 
 		public readonly Configurable<string> EntryA;
 		public readonly Configurable<string> EntryB;
@@ -28,8 +28,8 @@ namespace Vestiges {
 		public PluginOptions(Plugin pluginInstance, ManualLogSource logSource) {
 			Logger = logSource;
 			VestigeLimit = config.Bind("VestigeLimit", 50, new ConfigAcceptableRange<int>(1, 5000));
-			UploadID = config.Bind("UploadID", "1FAIpQLSdkBHGRNMbJQGJ0A89CJfDrA98uy1DBL3VQuys9s91i41P1JA");
 			DownloadID = config.Bind("DownloadID", "1mUk-KQp7Kv4U-ODamQwb7DUWNewvyXLucVu72bVqFZU");
+			UploadID = config.Bind("UploadID", "1FAIpQLSdkBHGRNMbJQGJ0A89CJfDrA98uy1DBL3VQuys9s91i41P1JA");
 
 			EntryA = config.Bind("EntryA", "46667845");
 			EntryB = config.Bind("EntryB", "799920119");
@@ -67,10 +67,10 @@ namespace Vestiges {
 				RefreshVestiges,
 				VestigeStatus,
 
-				new OpLabel(10f, 400f, "Upload ID"),
-				new OpTextBox(UploadID, new Vector2(200f,400f), 400f) { description = "Only change this if you know what you are doing!" },
-				new OpLabel(10f, 370f, "Download ID"),
-				new OpTextBox(DownloadID, new Vector2(200f,370f), 400f) { description = "Only change this if you know what you are doing!" },
+				new OpLabel(10f, 400f, "Download ID"),
+				new OpTextBox(DownloadID, new Vector2(200f,400f), 400f) { description = "Only change this if you know what you are doing!" },
+				new OpLabel(10f, 370f, "Upload ID"),
+				new OpTextBox(UploadID, new Vector2(200f,370f), 400f) { description = "Only change this if you know what you are doing!" },
 				new OpLabel(10f, 340f, "entry1 ID"),
 				new OpTextBox(EntryA, new Vector2(200f,340f), 400f) { description = "Only change this if you know what you are doing!" },
 				new OpLabel(10f, 310f, "entry2 ID"),
