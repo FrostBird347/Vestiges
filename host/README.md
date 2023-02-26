@@ -1,6 +1,6 @@
 # Host
 
-Google Forms and Google Slides are used to share Vestiges between different players.
+Google Forms and Google Sheets are used to share Vestiges between different players.
 
  - [Google Forms](./GoogleForms.md): used to upload Vestiges, can be changed client side via the `Upload ID` option
 	 - Note that you will have to obtain the relevant entry IDs from the form and also set them accordingly
