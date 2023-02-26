@@ -20,7 +20,7 @@ using System.Globalization;
 
 namespace Vestiges {
 
-	[BepInPlugin("frostbird347.vestiges", "Vestiges", "0.9.0")]
+	[BepInPlugin("frostbird347.vestiges", "Vestiges", "0.9.1")]
 	public sealed class Plugin : BaseUnityPlugin {
 		bool init;
 		private PluginOptions Options = null;
@@ -30,6 +30,7 @@ namespace Vestiges {
 		List<Vestige> activeVestigeList;
 		string lastRoomName;
 		List<VestigeSpawnQueue> vestigeSpawnQueue;
+		int vestigeUploadLimiter;
 		List<WorldCoordinate> lastVestigeSpawns;
 		bool isStory;
 
@@ -56,6 +57,7 @@ namespace Vestiges {
 				activeVestigeList = new List<Vestige>();
 				lastRoomName = "_";
 				vestigeSpawnQueue = new List<VestigeSpawnQueue>();
+				vestigeUploadLimiter = 0;
 				lastVestigeSpawns = new List<WorldCoordinate>();
 				isDownloaded = false;
 
@@ -160,9 +162,11 @@ namespace Vestiges {
 		}
 
 		private void AddNewVestige(Player self) {
-			if (isStory && vestigeSpawnQueue.Count != 0) {
+			vestigeUploadLimiter++;
+			if (isStory && vestigeSpawnQueue.Count != 0 && vestigeUploadLimiter == 50) {
 				int queueIndex = Random.Range(0, vestigeSpawnQueue.Count);
 				bool skip = false;
+				vestigeUploadLimiter = 0;
 
 				if (!lastVestigeSpawns.Contains(vestigeSpawnQueue[queueIndex].safeCoord)) {
 
@@ -215,13 +219,6 @@ namespace Vestiges {
 		}
 
 		private void UploadVestige(VestigeSpawn newVest) {
-			Logger.LogDebug("UploadVestige");
-			Logger.LogDebug(newVest.colour);
-			Logger.LogDebug(newVest.room);
-			Logger.LogDebug(newVest.region);
-			Logger.LogDebug(newVest.spawn);
-			Logger.LogDebug(newVest.target);
-
 			Dictionary<string, string> encodedSpawnData = new Dictionary<string, string>();
 			encodedSpawnData.Add("entry." + Options.EntryA.Value, newVest.room);
 			encodedSpawnData.Add("entry." + Options.EntryB.Value, newVest.region);
