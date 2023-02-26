@@ -97,7 +97,13 @@ namespace Vestiges {
 					for (int i = 0; i < vestigeData[regionName][roomName].Count && i < Options.VestigeLimit.Value; i++) {
 
 						VestigeSpawn spawnInfo = vestigeData[regionName][roomName][i];
-						Vestige newBug = new Vestige(newRoom, new Vector2(0, 0), spawnInfo.spawn, spawnInfo.target, spawnInfo.colour, 1);
+
+						int currentSize = 1;
+						if (spawnInfo.isNew) {
+							currentSize = 2;
+						}
+
+						Vestige newBug = new Vestige(newRoom, new Vector2(0, 0), spawnInfo.spawn, spawnInfo.target, spawnInfo.colour, currentSize);
 						newRoom.AddObject(newBug);
 						activeVestigeList.Add(newBug);
 					}
@@ -177,7 +183,7 @@ namespace Vestiges {
 						vestigeData[vestigeSpawnQueue[queueIndex].region].Add(vestigeSpawnQueue[queueIndex].room, new List<VestigeSpawn>());
 					}
 
-					VestigeSpawn newSpawn = new VestigeSpawn(vestigeSpawnQueue[queueIndex].room, vestigeSpawnQueue[queueIndex].region, vestigeSpawnQueue[queueIndex].colour, new VestigeCoord(vestigeSpawnQueue[queueIndex].coord), new VestigeCoord(vestigeSpawnQueue[queueIndex].safeCoord));
+					VestigeSpawn newSpawn = new VestigeSpawn(vestigeSpawnQueue[queueIndex].room, vestigeSpawnQueue[queueIndex].region, vestigeSpawnQueue[queueIndex].colour, new VestigeCoord(vestigeSpawnQueue[queueIndex].coord), new VestigeCoord(vestigeSpawnQueue[queueIndex].safeCoord), true);
 					vestigeData[vestigeSpawnQueue[queueIndex].region][vestigeSpawnQueue[queueIndex].room].Add(newSpawn);
 
 					lastVestigeSpawns.Add(vestigeSpawnQueue[queueIndex].safeCoord);
@@ -273,7 +279,10 @@ namespace Vestiges {
 					VestigeCoord currentSpawn = new VestigeCoord(int.Parse(currentValues[6], NumberStyles.Integer | NumberStyles.AllowExponent), int.Parse(currentValues[7], NumberStyles.Integer | NumberStyles.AllowExponent));
 					VestigeCoord currentTarget = new VestigeCoord(int.Parse(currentValues[8], NumberStyles.Integer | NumberStyles.AllowExponent), int.Parse(currentValues[9], NumberStyles.Integer | NumberStyles.AllowExponent));
 
-					VestigeSpawn currentVestige = new VestigeSpawn(currentValues[2], currentValues[1], currentColor, currentSpawn, currentTarget);
+					DateTime currentTimestamp = DateTime.SpecifyKind(DateTime.ParseExact(currentValues[0], "dd/MM/yyyy HH:mm:ss", CultureInfo.InvariantCulture), DateTimeKind.Utc);
+					bool currentIsNew = ((DateTime.UtcNow - currentTimestamp).TotalHours <= 24);
+
+					VestigeSpawn currentVestige = new VestigeSpawn(currentValues[2], currentValues[1], currentColor, currentSpawn, currentTarget, currentIsNew);
 					vestigeData[currentValues[2]][currentValues[1]].Add(currentVestige);
 
 				} else {
