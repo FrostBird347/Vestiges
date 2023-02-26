@@ -162,8 +162,8 @@ namespace Vestiges {
 		}
 
 		private void AddNewVestige(Player self) {
-			vestigeUploadLimiter++;
-			if (isStory && vestigeSpawnQueue.Count != 0 && vestigeUploadLimiter == 50) {
+			if (isStory && vestigeSpawnQueue.Count != 0 && vestigeUploadLimiter <= 50) vestigeUploadLimiter++;
+			if (isStory && vestigeSpawnQueue.Count != 0 && vestigeUploadLimiter >= 50) {
 				int queueIndex = Random.Range(0, vestigeSpawnQueue.Count);
 				bool skip = false;
 				vestigeUploadLimiter = 0;
