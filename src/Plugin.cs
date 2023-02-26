@@ -245,7 +245,8 @@ namespace Vestiges {
 			}
 
 			string[] rawRows = rawDataset.Split('\n');
-			if (rawRows.Length <= 0 || rawRows[0] != "Timestamp,room,region,colour.r,colour.g,colour.b,spawn.x,spawn.y,target.x,target.y\r") {
+			if (rawRows.Length <= 0 || rawRows[0].Trim('\r') != "Timestamp,room,region,colour.r,colour.g,colour.b,spawn.x,spawn.y,target.x,target.y") {
+				Logger.LogError("rawDataset is not formatted correclty!");
 				isDownloaded = false;
 				return;
 			}
