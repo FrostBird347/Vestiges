@@ -28,6 +28,7 @@ namespace Vestiges {
 
 		Dictionary<string, Dictionary<string, List<VestigeSpawn>>> vestigeData;
 		List<string> rawDownloads;
+		List<VestigeSpawn> localvestigeData;
 		List<Vestige> activeVestigeList;
 		string lastRoomName;
 		List<VestigeSpawnQueue> vestigeSpawnQueue;
@@ -57,6 +58,7 @@ namespace Vestiges {
 
 				vestigeData = new Dictionary<string, Dictionary<string, List<VestigeSpawn>>>();
 				rawDownloads = new List<string>();
+				localvestigeData = new List<VestigeSpawn>();
 				activeVestigeList = new List<Vestige>();
 				lastRoomName = "_";
 				vestigeSpawnQueue = new List<VestigeSpawnQueue>();
@@ -111,6 +113,17 @@ namespace Vestiges {
 						Vestige newBug = new Vestige(newRoom, new Vector2(0, 0), spawnInfo.spawn, spawnInfo.target, spawnInfo.colour, currentSize);
 						newRoom.AddObject(newBug);
 						activeVestigeList.Add(newBug);
+					}
+				}
+				if (!self.dead) {
+					for (int i = 0; i < localvestigeData.Count; i++) {
+						if (localvestigeData[i].region == regionName && localvestigeData[i].room == roomName) {
+
+							//Don't need to worry about the time because 24 hours will pretty much never pass between the start and end of a cycle
+							Vestige newBug = new Vestige(newRoom, new Vector2(0, 0), localvestigeData[i].spawn, localvestigeData[i].target, localvestigeData[i].colour, 2);
+							newRoom.AddObject(newBug);
+							activeVestigeList.Add(newBug);
+						}
 					}
 				}
 			}
@@ -181,15 +194,9 @@ namespace Vestiges {
 
 				if (!lastVestigeSpawns.Contains(vestigeSpawnQueue[queueIndex].safeCoord)) {
 
-					if (!vestigeData.ContainsKey(vestigeSpawnQueue[queueIndex].region)) {
-						vestigeData.Add(vestigeSpawnQueue[queueIndex].region, new Dictionary<string, List<VestigeSpawn>>());
-					}
-					if (!vestigeData[vestigeSpawnQueue[queueIndex].region].ContainsKey(vestigeSpawnQueue[queueIndex].room)) {
-						vestigeData[vestigeSpawnQueue[queueIndex].region].Add(vestigeSpawnQueue[queueIndex].room, new List<VestigeSpawn>());
-					}
 
 					VestigeSpawn newSpawn = new VestigeSpawn(vestigeSpawnQueue[queueIndex].room, vestigeSpawnQueue[queueIndex].region, vestigeSpawnQueue[queueIndex].colour, new VestigeCoord(vestigeSpawnQueue[queueIndex].coord), new VestigeCoord(vestigeSpawnQueue[queueIndex].safeCoord), DateTime.UtcNow);
-					vestigeData[vestigeSpawnQueue[queueIndex].region][vestigeSpawnQueue[queueIndex].room].Add(newSpawn);
+					localvestigeData.Add(newSpawn);
 
 					lastVestigeSpawns.Add(vestigeSpawnQueue[queueIndex].safeCoord);
 					vestigeCount++;
@@ -247,16 +254,6 @@ namespace Vestiges {
 			encodedSpawnData.Add("entry." + Options.EntryI.Value, newVest.target.y.ToString());
 
 			httpClient.PostAsync("https://docs.google.com/forms/u/0/d/e/" + Options.UploadID.Value + "/formResponse", new FormUrlEncodedContent(encodedSpawnData));
-
-			rawDownloads.Add(
-				newVest.room + "," +
-				newVest.region + "," +
-				ColorUtility.ToHtmlStringRGB(newVest.colour) + "," +
-				newVest.spawn.x.ToString() + "," +
-				newVest.spawn.y.ToString() + "," +
-				newVest.target.x.ToString() + "," +
-				newVest.target.y.ToString() + ","
-				);
 		}
 
 		private async void DownloadVestiges(bool firstRun) {
@@ -304,22 +301,14 @@ namespace Vestiges {
 					VestigeCoord currentTarget = new VestigeCoord(int.Parse(currentValues[8], NumberStyles.Integer | NumberStyles.AllowExponent), int.Parse(currentValues[9], NumberStyles.Integer | NumberStyles.AllowExponent));
 					DateTime currentTimestamp = DateTime.SpecifyKind(DateTime.ParseExact(currentValues[0], "dd/MM/yyyy HH:mm:ss", CultureInfo.InvariantCulture), DateTimeKind.Utc);
 
-					string rawDlCheck =
-						currentValues[1] + "," +
-						currentValues[2] + "," +
-						ColorUtility.ToHtmlStringRGB(currentColor) + "," +
-						currentValues[6] + "," +
-						currentValues[7] + "," +
-						currentValues[8] + "," +
-						currentValues[9];
 
-					if (!rawDownloads.Contains(rawDlCheck)) {
+					if (!rawDownloads.Contains(rawRows[r].Trim('\r'))) {
 
 						VestigeSpawn currentVestige = new VestigeSpawn(currentValues[2], currentValues[1], currentColor, currentSpawn, currentTarget, currentTimestamp);
 						vestigeData[currentValues[2]][currentValues[1]].Add(currentVestige);
 						vestigeCount++;
 
-						rawDownloads.Add(rawDlCheck);
+						rawDownloads.Add(rawRows[r].Trim('\r'));
 						newEntries++;
 					}
 
@@ -327,7 +316,9 @@ namespace Vestiges {
 					Logger.LogError("skipped entry on row " + r + " due to invalid formatting!");
 				}
 			}
-			Logger.LogDebug(validEntries + "/" + (totalEntries) + " Vestiges were downloaded (" + newEntries + " new, " + vestigeCount + " loaded)");
+			vestigeCount -= localvestigeData.Count;
+			Logger.LogDebug(validEntries + "/" + (totalEntries) + " Vestiges were downloaded (" + newEntries + " new, " + localvestigeData.Count + " (local) removed and " + vestigeCount + " loaded)");
+			localvestigeData.Clear();
 
 			isDownloaded = true;
 		}
@@ -353,6 +344,7 @@ namespace Vestiges {
 			}
 			vestigeData.Clear();
 			rawDownloads.Clear();
+			localvestigeData.Clear();
 			vestigeCount = 0;
 
 			Logger.LogDebug("Cleared all Vestiges");
