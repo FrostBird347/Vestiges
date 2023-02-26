@@ -245,7 +245,7 @@ namespace Vestiges {
 			}
 
 			string[] rawRows = rawDataset.Split('\n');
-			if (rawRows.Length <= 0 || rawRows[0].Trim('\r') != "Timestamp,room,region,colour.r,colour.g,colour.b,spawn.x,spawn.y,target.x,target.y") {
+			if (rawRows.Length <= 0 || !rawRows[0].Trim('\r').StartsWith("Timestamp,room,region,colour.r,colour.g,colour.b,spawn.x,spawn.y,target.x,target.y")) {
 				Logger.LogError("rawDataset is not formatted correclty!");
 				isDownloaded = false;
 				return;
@@ -259,7 +259,7 @@ namespace Vestiges {
 				string[] currentValues = rawRows[r].Trim('\r').Split(',');
 				if (currentValues == new string[] { "", "", "", "", "", "", "", "", "", "" }) {
 					totalEntries--;
-				} else if (currentValues.Length == 10) {
+				} else if (currentValues.Length >= 10) {
 					validEntries++;
 
 					if (!vestigeData.ContainsKey(currentValues[2])) {
