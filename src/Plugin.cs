@@ -221,7 +221,8 @@ namespace Vestiges {
 						UploadVestige(newSpawn);
 					} else {
 						Logger.LogWarning("Sorry but to slightly lower the amount of vestiges being mass spawned, devtools disables uploading for a while.");
-						Logger.LogWarning("While I do expect people easily get around this, I hope that it will slightly lower the rate of new vestiges being mass spawned in single rooms to a rate where I won't need to lower their lifetime.");
+						Logger.LogWarning("While I do expect people to easily get around this, I hope that it will slightly lower the rate of new vestiges being mass spawned in single rooms to a rate where I won't need to lower their lifetime.");
+						Logger.LogWarning("I will likely add a way to disable this once the vestige creation rate stabilizes.");
 					}
 
 					if (self.room != null && self.room.abstractRoom.name == vestigeSpawnQueue[queueIndex].room) {
