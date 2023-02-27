@@ -60,6 +60,8 @@ namespace Vestiges {
 			orig(self);
 
 			if (!init) {
+				Logger.LogDebug("Init");
+
 				init = true;
 
 				vestigeData = new Dictionary<string, Dictionary<string, List<VestigeSpawn>>>();
@@ -72,14 +74,14 @@ namespace Vestiges {
 				vestigeSpawnQueue = new List<VestigeSpawnQueue>();
 				vestigeUploadLimiter = 150;
 				lastVestigeSpawns = new List<WorldCoordinate>();
-				lastDev = new DateTime().AddYears(-1);
+				lastDev = DateTime.Now.AddYears(-1);
 
 				isStory = false;
 
 				isDownloading = false;
 				isDownloaded = false;
 				vestigeCount = 0;
-				lastDownload = new DateTime().AddYears(-1);
+				lastDownload = DateTime.Now.AddYears(-1);
 
 				try {
 					Options = new PluginOptions(this, Logger);
@@ -102,6 +104,8 @@ namespace Vestiges {
 					On.Player.Grabbed -= OnGrabDeath;
 					On.RainWorldGame.ctor -= StartCycle;
 				}
+
+				Logger.LogDebug("Init done");
 			}
 		}
 
@@ -361,7 +365,7 @@ namespace Vestiges {
 
 				isDownloaded = true;
 				isDownloading = false;
-				lastDownload = new DateTime().AddMinutes(30);
+				lastDownload = DateTime.Now.AddMinutes(30);
 			} else if (isDownloading) {
 				Logger.LogWarning("Skipped download attempt: Vestiges are still being downloaded!");
 			} else {
