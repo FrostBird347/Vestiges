@@ -10,6 +10,8 @@ namespace Vestiges {
 		private readonly ManualLogSource Logger;
 
 		public readonly Configurable<int> VestigeLimit;
+		public readonly Configurable<int> LargeHours;
+		public readonly Configurable<int> Lifespan;
 		public readonly Configurable<string> DownloadID;
 		public readonly Configurable<string> UploadID;
 
@@ -28,6 +30,8 @@ namespace Vestiges {
 		public PluginOptions(Plugin pluginInstance, ManualLogSource logSource) {
 			Logger = logSource;
 			VestigeLimit = config.Bind("VestigeLimit", 50, new ConfigAcceptableRange<int>(1, 5000));
+			LargeHours = config.Bind("LargeHours", 24, new ConfigAcceptableRange<int>(0, 720));
+			Lifespan = config.Bind("Lifespan", 720, new ConfigAcceptableRange<int>(0, 720));
 			DownloadID = config.Bind("DownloadID", "1mUk-KQp7Kv4U-ODamQwb7DUWNewvyXLucVu72bVqFZU");
 			UploadID = config.Bind("UploadID", "1FAIpQLSdkBHGRNMbJQGJ0A89CJfDrA98uy1DBL3VQuys9s91i41P1JA");
 
@@ -63,7 +67,11 @@ namespace Vestiges {
 			{
 				new OpLabel(10f, 550f, "Options", true),
 				new OpLabel(10f, 490f, "Vestige Limit"),
-				new OpUpdown(VestigeLimit, new Vector2(110f, 490f), 75) { description = "Maximum number of Vestiges that can be placed in a single room" },
+				new OpUpdown(VestigeLimit, new Vector2(90f, 490f), 75) { description = "Maximum number of Vestiges that can be placed in a single room" },
+				new OpLabel(180f, 490f, "Large Vestige Timeout"),
+				new OpUpdown(LargeHours, new Vector2(310f, 490f), 75) { description = "How many hours Vestiges will be twice as large for" },
+				new OpLabel(400f, 490f, "Vestige Timeout"),
+				new OpUpdown(Lifespan, new Vector2(500f, 490f), 75) { description = "How many hours Vestiges exist for" },
 				RefreshVestiges,
 				VestigeStatus,
 

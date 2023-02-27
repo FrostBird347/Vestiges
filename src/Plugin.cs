@@ -45,6 +45,7 @@ namespace Vestiges {
 		public static bool isDownloaded;
 		public static int vestigeCount;
 		private DateTime lastDownload;
+		int lastLifespan;
 
 		public void OnEnable() {
 			On.RainWorld.OnModsInit += Init;
@@ -82,6 +83,7 @@ namespace Vestiges {
 				isDownloaded = false;
 				vestigeCount = 0;
 				lastDownload = DateTime.Now.AddYears(-1);
+				lastLifespan = -1;
 
 				try {
 					Options = new PluginOptions(this, Logger);
@@ -124,7 +126,7 @@ namespace Vestiges {
 						VestigeSpawn spawnInfo = vestigeData[regionName][roomName][i];
 
 						int currentSize = 1;
-						if ((DateTime.UtcNow - spawnInfo.time).TotalHours <= 24) {
+						if ((DateTime.UtcNow - spawnInfo.time).TotalHours <= Options.LargeHours.Value) {
 							currentSize = 2;
 						}
 
@@ -137,8 +139,12 @@ namespace Vestiges {
 					for (int i = 0; i < localvestigeData.Count; i++) {
 						if (localvestigeData[i].region == regionName && localvestigeData[i].room == roomName) {
 
-							//Don't need to worry about the time because 24 hours will pretty much never pass between the start and end of a cycle
-							Vestige newBug = new Vestige(newRoom, new Vector2(0, 0), localvestigeData[i].spawn, localvestigeData[i].target, localvestigeData[i].colour, 2);
+							int currentSize = 1;
+							if ((DateTime.UtcNow - localvestigeData[i].time).TotalHours <= Options.LargeHours.Value) {
+								currentSize = 2;
+							}
+
+							Vestige newBug = new Vestige(newRoom, new Vector2(0, 0), localvestigeData[i].spawn, localvestigeData[i].target, localvestigeData[i].colour, currentSize);
 							newRoom.AddObject(newBug);
 							activeVestigeList.Add(newBug);
 						}
@@ -228,7 +234,7 @@ namespace Vestiges {
 					} else {
 						Logger.LogWarning("Sorry but to slightly lower the amount of vestiges being mass spawned, devtools disables uploading for a while.");
 						Logger.LogWarning("While I do expect people to easily get around this, I hope that it will slightly lower the rate of new vestiges being mass spawned in single rooms to a rate where I won't need to lower their lifetime.");
-						Logger.LogWarning("I will likely add a way to disable this once the vestige creation rate stabilizes.");
+						Logger.LogWarning("I will likely add a way to disable this once the vestige creation rate stabilizes (or remove it completely), especially since you can now lower the Vestige lifespan in the config yourself");
 					}
 
 					if (self.room != null && self.room.abstractRoom.name == vestigeSpawnQueue[queueIndex].room) {
@@ -248,7 +254,14 @@ namespace Vestiges {
 			orig(self, manager);
 
 			lastRoomName = "_";
-			DownloadVestiges(false);
+			if (lastLifespan != Options.Lifespan.Value) {
+				Logger.LogDebug("Vestige lifespan has been changed, clearing and redownloading vestiges...");
+				ClearVestiges();
+				DownloadVestiges(true);
+				lastLifespan = Options.Lifespan.Value;
+			} else {
+				DownloadVestiges(false);
+			}
 		}
 
 		private void ResetQueue() {
@@ -349,8 +362,11 @@ namespace Vestiges {
 						if (!rawDownloads.Contains(rawRows[r].Trim('\r'))) {
 
 							VestigeSpawn currentVestige = new VestigeSpawn(currentValues[2], currentValues[1], currentColor, currentSpawn, currentTarget, currentTimestamp);
-							vestigeData[currentValues[2]][currentValues[1]].Add(currentVestige);
-							vestigeCount++;
+
+							if ((DateTime.UtcNow - currentVestige.time).TotalHours <= Options.Lifespan.Value) {
+								vestigeData[currentValues[2]][currentValues[1]].Add(currentVestige);
+								vestigeCount++;
+							}
 
 							rawDownloads.Add(rawRows[r].Trim('\r'));
 							newEntries++;
