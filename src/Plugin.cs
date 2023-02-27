@@ -36,6 +36,7 @@ namespace Vestiges {
 		List<VestigeSpawnQueue> vestigeSpawnQueue;
 		int vestigeUploadLimiter;
 		List<WorldCoordinate> lastVestigeSpawns;
+		private DateTime lastDev;
 
 		bool isStory;
 
@@ -70,6 +71,7 @@ namespace Vestiges {
 				vestigeSpawnQueue = new List<VestigeSpawnQueue>();
 				vestigeUploadLimiter = 150;
 				lastVestigeSpawns = new List<WorldCoordinate>();
+				lastDev = new DateTime().AddYears(-1);
 
 				isStory = false;
 
@@ -155,6 +157,10 @@ namespace Vestiges {
 				isStory = self.room.world.game.IsStorySession;
 				AddNewVestige(self);
 			}
+
+			if (self.room != null && self.room.world.game.devToolsActive) {
+				lastDev = DateTime.Now.AddMinutes(5);
+			}
 		}
 
 		private void OnDeath(On.Player.orig_Die orig, Player self) {
@@ -211,7 +217,12 @@ namespace Vestiges {
 					lastVestigeSpawns.Add(vestigeSpawnQueue[queueIndex].safeCoord);
 					vestigeCount++;
 
-					UploadVestige(newSpawn);
+					if (DateTime.Compare(DateTime.Now, lastDev) > 0) {
+						UploadVestige(newSpawn);
+					} else {
+						Logger.LogWarning("Sorry but to slightly lower the amount of vestiges being mass spawned, devtools disables uploading for a while.");
+						Logger.LogWarning("While I do expect people easily get around this, I hope that it will slightly lower the rate of new vestiges being mass spawned in single rooms to a rate where I won't need to lower their lifetime.");
+					}
 
 					if (self.room != null && self.room.abstractRoom.name == vestigeSpawnQueue[queueIndex].room) {
 						Vestige newBug = new Vestige(self.room, new Vector2(0, 0), newSpawn.spawn, newSpawn.target, newSpawn.colour, 2);
