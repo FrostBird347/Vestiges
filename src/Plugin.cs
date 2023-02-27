@@ -29,6 +29,7 @@ namespace Vestiges {
 		Dictionary<string, Dictionary<string, List<VestigeSpawn>>> vestigeData;
 		List<string> rawDownloads;
 		List<VestigeSpawn> localvestigeData;
+		Dictionary<int, DateTime> localDeathTimes;
 
 		List<Vestige> activeVestigeList;
 		string lastRoomName;
@@ -68,6 +69,7 @@ namespace Vestiges {
 				vestigeData = new Dictionary<string, Dictionary<string, List<VestigeSpawn>>>();
 				rawDownloads = new List<string>();
 				localvestigeData = new List<VestigeSpawn>();
+				localDeathTimes = new Dictionary<int, DateTime>();
 
 				activeVestigeList = new List<Vestige>();
 				lastRoomName = "_";
@@ -188,7 +190,10 @@ namespace Vestiges {
 		}
 
 		private void QueueNewVestige(Player self, bool actuallyDead) {
-			if (self.room == null && actuallyDead && isStory) {
+
+			if (isStory && (localDeathTimes[self.playerState.playerNumber] == null || (DateTime.Now - localDeathTimes[self.playerState.playerNumber]).TotalSeconds >= 10)) {
+				localDeathTimes.Remove(self.playerState.playerNumber);
+				localDeathTimes.Add(self.playerState.playerNumber, DateTime.Now);
 
 				WorldCoordinate safePos = self.coord;
 				if (self.karmaFlowerGrowPos.HasValue && self.karmaFlowerGrowPos.Value.Valid && self.coord.room == self.karmaFlowerGrowPos.Value.room) {
@@ -198,17 +203,10 @@ namespace Vestiges {
 				VestigeSpawnQueue newSpawn = new VestigeSpawnQueue(self.coord, safePos, self.ShortCutColor());
 				vestigeSpawnQueue.Add(newSpawn);
 
-			} else if (self.room != null && self.room.world.game.IsStorySession) {
-
-				WorldCoordinate safePos = self.coord;
-				if (self.karmaFlowerGrowPos.HasValue && self.karmaFlowerGrowPos.Value.Valid && self.coord.room == self.karmaFlowerGrowPos.Value.room) {
-					safePos = self.karmaFlowerGrowPos.Value;
+				if (self.room != null) {
+					AddNewVestige(self);
 				}
 
-				VestigeSpawnQueue newSpawn = new VestigeSpawnQueue(self.coord, safePos, self.ShortCutColor());
-				vestigeSpawnQueue.Add(newSpawn);
-
-				AddNewVestige(self);
 			}
 
 		}
@@ -413,6 +411,7 @@ namespace Vestiges {
 				vestigeData.Clear();
 				rawDownloads.Clear();
 				localvestigeData.Clear();
+				localDeathTimes.Clear();
 				vestigeCount = 0;
 
 				Logger.LogDebug("Cleared all Vestiges");
