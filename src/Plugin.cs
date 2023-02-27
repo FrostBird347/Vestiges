@@ -45,7 +45,7 @@ namespace Vestiges {
 		public static bool isDownloading;
 		public static bool isDownloaded;
 		public static int vestigeCount;
-		private DateTime lastDownload;
+		private DateTime nextDownload;
 		int lastLifespan;
 
 		public void OnEnable() {
@@ -84,7 +84,7 @@ namespace Vestiges {
 				isDownloading = false;
 				isDownloaded = false;
 				vestigeCount = 0;
-				lastDownload = DateTime.Now.AddYears(-1);
+				nextDownload = DateTime.Now.AddYears(-1);
 				lastLifespan = -1;
 
 				try {
@@ -297,7 +297,7 @@ namespace Vestiges {
 		}
 
 		private async void DownloadVestiges(bool firstRun) {
-			if (!isDownloading && (firstRun || DateTime.Compare(DateTime.Now, lastDownload) > 0)) {
+			if (!isDownloading && (firstRun || DateTime.Compare(DateTime.Now, nextDownload) > 0)) {
 				Logger.LogDebug("Downloading Vestiges...");
 
 				string rawDataset = "";
@@ -380,7 +380,7 @@ namespace Vestiges {
 
 				isDownloaded = true;
 				isDownloading = false;
-				lastDownload = DateTime.Now.AddMinutes(30);
+				nextDownload = DateTime.Now.AddMinutes(30);
 			} else if (isDownloading) {
 				Logger.LogWarning("Skipped download attempt: Vestiges are still being downloaded!");
 			} else {
