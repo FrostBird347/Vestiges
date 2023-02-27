@@ -29,14 +29,18 @@ namespace Vestiges {
 		Dictionary<string, Dictionary<string, List<VestigeSpawn>>> vestigeData;
 		List<string> rawDownloads;
 		List<VestigeSpawn> localvestigeData;
+
 		List<Vestige> activeVestigeList;
 		string lastRoomName;
+
 		List<VestigeSpawnQueue> vestigeSpawnQueue;
 		int vestigeUploadLimiter;
 		List<WorldCoordinate> lastVestigeSpawns;
+
 		bool isStory;
 
 		private static readonly HttpClient httpClient = new HttpClient();
+		public static bool isDownloading;
 		public static bool isDownloaded;
 		public static int vestigeCount;
 
@@ -59,11 +63,17 @@ namespace Vestiges {
 				vestigeData = new Dictionary<string, Dictionary<string, List<VestigeSpawn>>>();
 				rawDownloads = new List<string>();
 				localvestigeData = new List<VestigeSpawn>();
+
 				activeVestigeList = new List<Vestige>();
 				lastRoomName = "_";
+
 				vestigeSpawnQueue = new List<VestigeSpawnQueue>();
 				vestigeUploadLimiter = 150;
 				lastVestigeSpawns = new List<WorldCoordinate>();
+
+				isStory = false;
+
+				isDownloading = false;
 				isDownloaded = false;
 				vestigeCount = 0;
 
@@ -257,70 +267,89 @@ namespace Vestiges {
 		}
 
 		private async void DownloadVestiges(bool firstRun) {
-			Logger.LogDebug("Downloading Vestiges...");
+			if (!isDownloading) {
+				Logger.LogDebug("Downloading Vestiges...");
 
-			string rawDataset = await httpClient.GetStringAsync("https://docs.google.com/spreadsheet/ccc?key=" + Options.DownloadID.Value + "&output=csv");
-			if (rawDataset == null || rawDataset == "") {
-				Logger.LogError("rawDataset is either null or empty!");
-				if (firstRun) {
-					isDownloaded = false;
-				}
-				return;
-			}
-
-			string[] rawRows = rawDataset.Split('\n');
-			if (rawRows.Length <= 0 || !rawRows[0].Trim('\r').StartsWith("Timestamp,room,region,colour.r,colour.g,colour.b,spawn.x,spawn.y,target.x,target.y")) {
-				Logger.LogError("rawDataset is not formatted correclty!");
-				if (firstRun) {
-					isDownloaded = false;
-				}
-				return;
-			}
-
-			int validEntries = 0;
-			int totalEntries = rawRows.Length - 1;
-			int newEntries = 0;
-			for (int r = 1; r < rawRows.Length; r++) {
-				//[Timestamp, room, region, colour.r, colour.g, colour.b, spawn.x, spawn.y, target.x, target.y]
-				//[0        , 1   , 2     , 3       , 4       , 5       , 6      , 7      , 8       , 9       ]
-				string[] currentValues = rawRows[r].Trim('\r').Split(',');
-				if (currentValues == new string[] { "", "", "", "", "", "", "", "", "", "" }) {
-					totalEntries--;
-				} else if (currentValues.Length >= 10) {
-					validEntries++;
-
-					if (!vestigeData.ContainsKey(currentValues[2])) {
-						vestigeData.Add(currentValues[2], new Dictionary<string, List<VestigeSpawn>>());
+				string rawDataset = "";
+				try {
+					rawDataset = await httpClient.GetStringAsync("https://docs.google.com/spreadsheet/ccc?key=" + Options.DownloadID.Value + "&output=csv");
+				} catch (Exception err) {
+					Logger.LogDebug("Download failed, error below:");
+					Logger.LogError(err.Message);
+					if (firstRun) {
+						isDownloaded = false;
 					}
-					if (!vestigeData[currentValues[2]].ContainsKey(currentValues[1])) {
-						vestigeData[currentValues[2]].Add(currentValues[1], new List<VestigeSpawn>());
-					}
-
-					Color currentColor = new Color(float.Parse(currentValues[3], NumberStyles.Float), float.Parse(currentValues[4], NumberStyles.Float), float.Parse(currentValues[5], NumberStyles.Float));
-					VestigeCoord currentSpawn = new VestigeCoord(int.Parse(currentValues[6], NumberStyles.Integer | NumberStyles.AllowExponent), int.Parse(currentValues[7], NumberStyles.Integer | NumberStyles.AllowExponent));
-					VestigeCoord currentTarget = new VestigeCoord(int.Parse(currentValues[8], NumberStyles.Integer | NumberStyles.AllowExponent), int.Parse(currentValues[9], NumberStyles.Integer | NumberStyles.AllowExponent));
-					DateTime currentTimestamp = DateTime.SpecifyKind(DateTime.ParseExact(currentValues[0], "dd/MM/yyyy HH:mm:ss", CultureInfo.InvariantCulture), DateTimeKind.Utc);
-
-
-					if (!rawDownloads.Contains(rawRows[r].Trim('\r'))) {
-
-						VestigeSpawn currentVestige = new VestigeSpawn(currentValues[2], currentValues[1], currentColor, currentSpawn, currentTarget, currentTimestamp);
-						vestigeData[currentValues[2]][currentValues[1]].Add(currentVestige);
-						vestigeCount++;
-
-						rawDownloads.Add(rawRows[r].Trim('\r'));
-						newEntries++;
-					}
-
-				} else {
-					Logger.LogError("skipped entry on row " + r + " due to invalid formatting!");
+					isDownloading = false;
+					return;
 				}
-			}
-			vestigeCount -= localvestigeData.Count;
-			Logger.LogDebug(validEntries + "/" + (totalEntries) + " Vestiges were downloaded (" + newEntries + " new, " + localvestigeData.Count + " (local) removed and " + vestigeCount + " loaded)");
-			localvestigeData.Clear();
 
-			isDownloaded = true;
+				if (rawDataset == null || rawDataset == "") {
+					Logger.LogError("rawDataset is either null or empty!");
+					if (firstRun) {
+						isDownloaded = false;
+					}
+					isDownloading = false;
+					return;
+				}
+
+				string[] rawRows = rawDataset.Split('\n');
+				if (rawRows.Length <= 0 || !rawRows[0].Trim('\r').StartsWith("Timestamp,room,region,colour.r,colour.g,colour.b,spawn.x,spawn.y,target.x,target.y")) {
+					Logger.LogError("rawDataset is not formatted correclty!");
+					if (firstRun) {
+						isDownloaded = false;
+					}
+					isDownloading = false;
+					return;
+				}
+
+				int validEntries = 0;
+				int totalEntries = rawRows.Length - 1;
+				int newEntries = 0;
+				for (int r = 1; r < rawRows.Length; r++) {
+					//[Timestamp, room, region, colour.r, colour.g, colour.b, spawn.x, spawn.y, target.x, target.y]
+					//[0        , 1   , 2     , 3       , 4       , 5       , 6      , 7      , 8       , 9       ]
+					string[] currentValues = rawRows[r].Trim('\r').Split(',');
+					if (currentValues == new string[] { "", "", "", "", "", "", "", "", "", "" }) {
+						totalEntries--;
+					} else if (currentValues.Length >= 10) {
+						validEntries++;
+
+						if (!vestigeData.ContainsKey(currentValues[2])) {
+							vestigeData.Add(currentValues[2], new Dictionary<string, List<VestigeSpawn>>());
+						}
+						if (!vestigeData[currentValues[2]].ContainsKey(currentValues[1])) {
+							vestigeData[currentValues[2]].Add(currentValues[1], new List<VestigeSpawn>());
+						}
+
+						Color currentColor = new Color(float.Parse(currentValues[3], NumberStyles.Float), float.Parse(currentValues[4], NumberStyles.Float), float.Parse(currentValues[5], NumberStyles.Float));
+						VestigeCoord currentSpawn = new VestigeCoord(int.Parse(currentValues[6], NumberStyles.Integer | NumberStyles.AllowExponent), int.Parse(currentValues[7], NumberStyles.Integer | NumberStyles.AllowExponent));
+						VestigeCoord currentTarget = new VestigeCoord(int.Parse(currentValues[8], NumberStyles.Integer | NumberStyles.AllowExponent), int.Parse(currentValues[9], NumberStyles.Integer | NumberStyles.AllowExponent));
+						DateTime currentTimestamp = DateTime.SpecifyKind(DateTime.ParseExact(currentValues[0], "dd/MM/yyyy HH:mm:ss", CultureInfo.InvariantCulture), DateTimeKind.Utc);
+
+
+						if (!rawDownloads.Contains(rawRows[r].Trim('\r'))) {
+
+							VestigeSpawn currentVestige = new VestigeSpawn(currentValues[2], currentValues[1], currentColor, currentSpawn, currentTarget, currentTimestamp);
+							vestigeData[currentValues[2]][currentValues[1]].Add(currentVestige);
+							vestigeCount++;
+
+							rawDownloads.Add(rawRows[r].Trim('\r'));
+							newEntries++;
+						}
+
+					} else {
+						Logger.LogError("skipped entry on row " + r + " due to invalid formatting!");
+					}
+				}
+				vestigeCount -= localvestigeData.Count;
+				Logger.LogDebug(validEntries + "/" + (totalEntries) + " Vestiges were downloaded (" + newEntries + " new, " + localvestigeData.Count + " (local) removed and " + vestigeCount + " loaded)");
+				localvestigeData.Clear();
+
+				isDownloaded = true;
+				isDownloading = false;
+			} else {
+				Logger.LogWarning("Skipped download attempt: Vestiges are still being downloaded!");
+			}
 		}
 
 		private void ClearVestiges() {
