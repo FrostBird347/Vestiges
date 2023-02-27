@@ -247,6 +247,7 @@ namespace Vestiges {
 		private void StartCycle(On.RainWorldGame.orig_ctor orig, RainWorldGame self, ProcessManager manager) {
 			orig(self, manager);
 
+			lastRoomName = "_";
 			DownloadVestiges(false);
 		}
 
