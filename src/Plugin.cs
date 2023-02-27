@@ -44,6 +44,7 @@ namespace Vestiges {
 		public static bool isDownloading;
 		public static bool isDownloaded;
 		public static int vestigeCount;
+		private DateTime lastDownload;
 
 		public void OnEnable() {
 			On.RainWorld.OnModsInit += Init;
@@ -78,6 +79,7 @@ namespace Vestiges {
 				isDownloading = false;
 				isDownloaded = false;
 				vestigeCount = 0;
+				lastDownload = new DateTime().AddYears(-1);
 
 				try {
 					Options = new PluginOptions(this, Logger);
@@ -279,15 +281,15 @@ namespace Vestiges {
 		}
 
 		private async void DownloadVestiges(bool firstRun) {
-			if (!isDownloading) {
+			if (!isDownloading && (firstRun || DateTime.Compare(DateTime.Now, lastDownload) > 0)) {
 				Logger.LogDebug("Downloading Vestiges...");
 
 				string rawDataset = "";
 				try {
-					rawDataset = await httpClient.GetStringAsync("https://docs.google.com/spreadsheet/ccc?key=" + Options.DownloadID.Value + "&output=csv");
+					string downloadingDataset = await httpClient.GetStringAsync("https://docs.google.com/spreadsheet/ccc?key=" + Options.DownloadID.Value + "&output=csv");
+					rawDataset = downloadingDataset;
 				} catch (Exception err) {
-					Logger.LogDebug("Download failed, error below:");
-					Logger.LogError(err.Message);
+					Logger.LogError("Download failed: " + err.Message);
 					if (firstRun) {
 						isDownloaded = false;
 					}
@@ -359,36 +361,43 @@ namespace Vestiges {
 
 				isDownloaded = true;
 				isDownloading = false;
-			} else {
+				lastDownload = new DateTime().AddMinutes(30);
+			} else if (isDownloading) {
 				Logger.LogWarning("Skipped download attempt: Vestiges are still being downloaded!");
+			} else {
+				Logger.LogWarning("Skipped download attempt: it has been less than half an hour!");
 			}
 		}
 
 		private void ClearVestiges() {
 			Logger.LogDebug("Clearing all saved Vestiges...");
+			if (!isDownloading) {
 
-			lastRoomName = "_";
-			for (int i = activeVestigeList.Count - 1; i >= 0; i--) {
-				if (!activeVestigeList[i].exists) {
-					activeVestigeList.RemoveAt(i);
+				lastRoomName = "_";
+				for (int i = activeVestigeList.Count - 1; i >= 0; i--) {
+					if (!activeVestigeList[i].exists) {
+						activeVestigeList.RemoveAt(i);
+					}
 				}
-			}
-			ResetQueue();
-			lastVestigeSpawns.Clear();
+				ResetQueue();
+				lastVestigeSpawns.Clear();
 
-			//Might not be nessecary, but just incase this should help avoid memory leaks
-			foreach (string currentRegion in vestigeData.Keys) {
-				foreach (string currentRoom in vestigeData[currentRegion].Keys) {
-					vestigeData[currentRegion][currentRoom].Clear();
+				//Might not be nessecary, but just incase this should help avoid memory leaks
+				foreach (string currentRegion in vestigeData.Keys) {
+					foreach (string currentRoom in vestigeData[currentRegion].Keys) {
+						vestigeData[currentRegion][currentRoom].Clear();
+					}
+					vestigeData[currentRegion].Clear();
 				}
-				vestigeData[currentRegion].Clear();
-			}
-			vestigeData.Clear();
-			rawDownloads.Clear();
-			localvestigeData.Clear();
-			vestigeCount = 0;
+				vestigeData.Clear();
+				rawDownloads.Clear();
+				localvestigeData.Clear();
+				vestigeCount = 0;
 
-			Logger.LogDebug("Cleared all Vestiges");
+				Logger.LogDebug("Cleared all Vestiges");
+			} else {
+				Logger.LogWarning("Did not clear: Vestiges are still being downloaded!");
+			}
 		}
 
 	}
