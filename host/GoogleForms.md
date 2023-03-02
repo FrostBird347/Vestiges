@@ -9,13 +9,13 @@ All questions below should be set to required:
 	 - Response validation:
 		 - Regular Expression
 		 - Matches
-		 - `^[A-Za-z0-9]{1,25}$`
+		 - `^[A-Za-z]{1,25}_[A-Za-z0-9_]{1,50}$`
  - Short Answer
 	 - Name/Title: region
 	 - Response validation:
 		 - Regular Expression
 		 - Matches
-		 - `^[A-Za-z]{1,25}_[A-Za-z0-9_]{1,50}$`
+		 - `^[A-Za-z0-9]{1,25}$`
  - Short Answer
 	 - Name/Title: colour.r
 	 - Response validation:
