@@ -33,6 +33,7 @@ namespace Vestiges {
 
 		List<Vestige> activeVestigeList;
 		string lastRoomName;
+		Dictionary<int, WorldCoordinate> backupTargets;
 
 		List<VestigeSpawnQueue> vestigeSpawnQueue;
 		int vestigeUploadLimiter;
@@ -73,6 +74,7 @@ namespace Vestiges {
 
 				activeVestigeList = new List<Vestige>();
 				lastRoomName = "_";
+				backupTargets = new Dictionary<int, WorldCoordinate>();
 
 				vestigeSpawnQueue = new List<VestigeSpawnQueue>();
 				vestigeUploadLimiter = 150;
@@ -175,6 +177,11 @@ namespace Vestiges {
 			if (self.room != null && self.room.world.game.devToolsActive) {
 				lastDev = DateTime.Now.AddMinutes(5);
 			}
+
+			if (self.lowerBodyFramesOnGround > 0 && !self.dead && !self.Stunned && self.grabbedBy.Count == 0) {
+				backupTargets.Remove(self.playerState.playerNumber);
+				backupTargets.Add(self.playerState.playerNumber, self.coord);
+			}
 		}
 
 		private void OnDeath(On.Player.orig_Die orig, Player self) {
@@ -198,6 +205,8 @@ namespace Vestiges {
 				WorldCoordinate safePos = self.coord;
 				if (self.karmaFlowerGrowPos.HasValue && self.karmaFlowerGrowPos.Value.Valid && self.coord.room == self.karmaFlowerGrowPos.Value.room) {
 					safePos = self.karmaFlowerGrowPos.Value;
+				} else if (backupTargets.ContainsKey(self.playerState.playerNumber) && backupTargets[self.playerState.playerNumber].Valid && backupTargets[self.playerState.playerNumber].room == self.coord.room) {
+					safePos = backupTargets[self.playerState.playerNumber];
 				}
 
 				VestigeSpawnQueue newSpawn = new VestigeSpawnQueue(self.coord, safePos, self.ShortCutColor());
@@ -221,7 +230,7 @@ namespace Vestiges {
 				if (!lastVestigeSpawns.Contains(vestigeSpawnQueue[queueIndex].safeCoord)) {
 
 
-					VestigeSpawn newSpawn = new VestigeSpawn(vestigeSpawnQueue[queueIndex].room, vestigeSpawnQueue[queueIndex].region, vestigeSpawnQueue[queueIndex].colour, new VestigeCoord(vestigeSpawnQueue[queueIndex].coord), new VestigeCoord(vestigeSpawnQueue[queueIndex].safeCoord), DateTime.UtcNow);
+					VestigeSpawn newSpawn = new VestigeSpawn(vestigeSpawnQueue[queueIndex].room, vestigeSpawnQueue[queueIndex].region, vestigeSpawnQueue[queueIndex].colour, new VestigeCoord(vestigeSpawnQueue[queueIndex].coord), new VestigeCoord(vestigeSpawnQueue[queueIndex].safeCoord, true), DateTime.UtcNow); ;
 					localvestigeData.Add(newSpawn);
 
 					lastVestigeSpawns.Add(vestigeSpawnQueue[queueIndex].safeCoord);
@@ -252,13 +261,14 @@ namespace Vestiges {
 			orig(self, manager);
 
 			lastRoomName = "_";
-			localDeathTimes.Clear();
 			if (lastLifespan != Options.Lifespan.Value) {
 				Logger.LogDebug("Vestige lifespan has been changed, clearing and redownloading vestiges...");
 				ClearVestiges();
 				DownloadVestiges(true);
 				lastLifespan = Options.Lifespan.Value;
 			} else {
+				localDeathTimes.Clear();
+				backupTargets.Clear();
 				DownloadVestiges(false);
 			}
 		}
@@ -415,6 +425,7 @@ namespace Vestiges {
 				rawDownloads.Clear();
 				localvestigeData.Clear();
 				localDeathTimes.Clear();
+				backupTargets.Clear();
 				vestigeCount = 0;
 
 				Logger.LogDebug("Cleared all Vestiges");
