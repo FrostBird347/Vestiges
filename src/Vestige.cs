@@ -32,6 +32,9 @@ namespace Vestiges {
 			pos = _room.MiddleOfTile(_pos.x, _pos.y);
 
 			target = _room.MiddleOfTile(_targt.x, _targt.y);
+			if (_targt.y < 0) {
+				target.y = (_room.MiddleOfTile(_targt.x, 0).y + _room.MiddleOfTile(_targt.x, -1).y) / 2f;
+			}
 
 			sin = Random.value;
 			col = _colour;
