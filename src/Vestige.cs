@@ -33,7 +33,7 @@ namespace Vestiges {
 
 			target = _room.MiddleOfTile(_targt.x, _targt.y);
 			if (_targt.y < 0) {
-				target.y = (_room.MiddleOfTile(_targt.x, 0).y + (_room.MiddleOfTile(_targt.x, -1).y * 3f)) / 4f;
+				target.y = (_room.MiddleOfTile(_targt.x, 0).y + _room.MiddleOfTile(_targt.x, -1).y) / 2f;
 			}
 
 			sin = Random.value;
