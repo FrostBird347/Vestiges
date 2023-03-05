@@ -191,7 +191,7 @@ namespace Vestiges {
 
 		private void QueueNewVestige(Player self, bool actuallyDead) {
 
-			if (isStory && (!localDeathTimes.ContainsKey(self.playerState.playerNumber) || (DateTime.Now - localDeathTimes[self.playerState.playerNumber]).TotalSeconds >= 10)) {
+			if (isStory && (!self.isSlugpup || self.IsJollyPlayer) && (!localDeathTimes.ContainsKey(self.playerState.playerNumber) || (DateTime.Now - localDeathTimes[self.playerState.playerNumber]).TotalSeconds >= 10)) {
 				localDeathTimes.Remove(self.playerState.playerNumber);
 				localDeathTimes.Add(self.playerState.playerNumber, DateTime.Now);
 
