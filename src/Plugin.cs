@@ -259,7 +259,6 @@ namespace Vestiges {
 				DownloadVestiges(true);
 				lastLifespan = Options.Lifespan.Value;
 			} else {
-
 				DownloadVestiges(false);
 			}
 		}
@@ -284,6 +283,8 @@ namespace Vestiges {
 		}
 
 		private void UploadVestige(VestigeSpawn newVest) {
+			Logger.LogDebug("Attempting to upload vestige... [" + newVest.room + ":" + newVest.region + ":(" + newVest.colour.r.ToString() + "," + newVest.colour.g.ToString() + "," + newVest.colour.b.ToString() + "):(" + newVest.spawn.x.ToString() + "," + newVest.spawn.y.ToString() + "):(" + newVest.target.x.ToString() + "," + newVest.target.y.ToString() + ")]");
+
 			Dictionary<string, string> encodedSpawnData = new Dictionary<string, string>();
 			encodedSpawnData.Add("entry." + Options.EntryA.Value, newVest.room);
 			encodedSpawnData.Add("entry." + Options.EntryB.Value, newVest.region);
