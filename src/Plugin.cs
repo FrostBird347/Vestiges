@@ -252,12 +252,14 @@ namespace Vestiges {
 			orig(self, manager);
 
 			lastRoomName = "_";
+			localDeathTimes.Clear();
 			if (lastLifespan != Options.Lifespan.Value) {
 				Logger.LogDebug("Vestige lifespan has been changed, clearing and redownloading vestiges...");
 				ClearVestiges();
 				DownloadVestiges(true);
 				lastLifespan = Options.Lifespan.Value;
 			} else {
+
 				DownloadVestiges(false);
 			}
 		}
