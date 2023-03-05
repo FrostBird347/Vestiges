@@ -101,6 +101,7 @@ namespace Vestiges {
 				if (configWorking) {
 					ClearVestiges();
 					DownloadVestiges(true);
+					lastLifespan = Options.Lifespan.Value;
 				} else {
 					Logger.LogFatal("Config failed to load, this mod has somewhat disabled itself for safety!");
 
