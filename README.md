@@ -14,6 +14,6 @@ Upon death, your current room and region's name will be accessible via a **publi
 ---
 So, what exactly does this mod do?
 
-Well upon death or being grabbed by a lizard, a ~~modified firefly~~ Vestige is created at your current location and through a very advanced system called uh... Google Forms and Google Sheets, your new Vestige will be uploaded and then become accessible to everyone else (within half an hour) for up to a month!
+Well upon death or being grabbed by a lizard, a ~~modified firefly~~ Vestige is created at your current location and through a very advanced system called uh... Google Forms and Google Sheets, your new Vestige will be uploaded and then become accessible to everyone else (within half an hour) for up to a month! (The default lifespan is 4 days)
 
 I got the idea of ~~ab~~using Google Forms and Sheets a year ago from a small game called [Radio Bubbles](https://ash-k.itch.io/radiobubble/devlog/343058/radio-bubbles-postmortem).
