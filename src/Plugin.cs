@@ -100,8 +100,8 @@ namespace Vestiges {
 
 				if (configWorking) {
 					ClearVestiges();
-					DownloadVestiges(true);
 					lastLifespan = Options.Lifespan.Value;
+					DownloadVestiges(true);
 				} else {
 					Logger.LogFatal("Config failed to load, this mod has somewhat disabled itself for safety!");
 
@@ -265,8 +265,8 @@ namespace Vestiges {
 			if (lastLifespan != Options.Lifespan.Value) {
 				Logger.LogDebug("Vestige lifespan has been changed, clearing and redownloading vestiges...");
 				ClearVestiges();
-				DownloadVestiges(true);
 				lastLifespan = Options.Lifespan.Value;
+				DownloadVestiges(true);
 			} else {
 				localDeathTimes.Clear();
 				backupTargets.Clear();
@@ -326,6 +326,7 @@ namespace Vestiges {
 					isDownloading = false;
 					return;
 				}
+				Logger.LogDebug("Loading Vestiges...");
 
 				if (rawDataset == null || rawDataset == "") {
 					Logger.LogError("rawDataset is either null or empty!");
