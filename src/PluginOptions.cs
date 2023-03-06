@@ -31,7 +31,7 @@ namespace Vestiges {
 			Logger = logSource;
 			VestigeLimit = config.Bind("VestigeLimit", 50, new ConfigAcceptableRange<int>(1, 5000));
 			LargeHours = config.Bind("LargeHours", 24, new ConfigAcceptableRange<int>(0, 720));
-			Lifespan = config.Bind("Lifespan", 720, new ConfigAcceptableRange<int>(0, 720));
+			Lifespan = config.Bind("Lifespan", 96, new ConfigAcceptableRange<int>(0, 720));
 			DownloadID = config.Bind("DownloadID", "1mUk-KQp7Kv4U-ODamQwb7DUWNewvyXLucVu72bVqFZU");
 			UploadID = config.Bind("UploadID", "1FAIpQLSdkBHGRNMbJQGJ0A89CJfDrA98uy1DBL3VQuys9s91i41P1JA");
 
