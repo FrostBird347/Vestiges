@@ -12,6 +12,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Net.Http;
 using System.Globalization;
+using System.Threading.Tasks;
 
 // Allows access to private members
 #pragma warning disable CS0618
@@ -101,7 +102,7 @@ namespace Vestiges {
 				if (configWorking) {
 					ClearVestiges();
 					lastLifespan = Options.Lifespan.Value;
-					DownloadVestiges(true);
+					Task.Run(() => DownloadVestiges(true));
 				} else {
 					Logger.LogFatal("Config failed to load, this mod has somewhat disabled itself for safety!");
 
@@ -266,11 +267,11 @@ namespace Vestiges {
 				Logger.LogDebug("Vestige lifespan has been changed, clearing and redownloading vestiges...");
 				ClearVestiges();
 				lastLifespan = Options.Lifespan.Value;
-				DownloadVestiges(true);
+				Task.Run(() => DownloadVestiges(true));
 			} else {
 				localDeathTimes.Clear();
 				backupTargets.Clear();
-				DownloadVestiges(false);
+				Task.Run(() => DownloadVestiges(false));
 			}
 		}
 
@@ -399,7 +400,7 @@ namespace Vestiges {
 			} else if (isDownloading) {
 				Logger.LogWarning("Skipped download attempt: Vestiges are still being downloaded!");
 			} else {
-				Logger.LogWarning("Skipped download attempt: it has been less than half an hour!");
+				Logger.LogDebug("Skipped download attempt: it has been less than half an hour!");
 			}
 		}
 
