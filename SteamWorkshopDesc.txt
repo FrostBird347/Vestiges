@@ -1,6 +1,6 @@
 Upon death, you will leave a temporary remnant for other players to find.
 
-[url=https://github.com/FrostBird347/Vestiges][img]https://img.shields.io/badge/github%20repo-%23121011.svg?style=for-the-badge&logo=github&logoColor=white[/img][/url]
+[url=https://steamcommunity.com/sharedfiles/filedetails/changelog/2939112857][img]https://img.shields.io/github/v/release/FrostBird347/Vestiges.svg?style=for-the-badge&label=Latest%20Release[/img][/url]
 [url=https://github.com/FrostBird347/Vestiges/issues][img]https://img.shields.io/github/issues/FrostBird347/Vestiges?style=for-the-badge[/img][/url]
 
 [hr][/hr]
