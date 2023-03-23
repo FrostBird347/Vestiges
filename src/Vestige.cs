@@ -119,7 +119,7 @@ namespace Vestiges {
 
 			if (!room.BeingViewed) {
 				exists = false;
-				Plugin.activeRooms.Remove(room.abstractRoom.name);
+				Plugin.activeRooms.Remove(room);
 				Destroy();
 			}
 		}

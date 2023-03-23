@@ -33,7 +33,7 @@ namespace Vestiges {
 		Dictionary<int, DateTime> localDeathTimes;
 
 		List<Vestige> activeVestigeList;
-		public static List<string> activeRooms;
+		public static List<Room> activeRooms;
 		Dictionary<int, WorldCoordinate> backupTargets;
 
 		List<VestigeSpawnQueue> vestigeSpawnQueue;
@@ -74,7 +74,7 @@ namespace Vestiges {
 				localDeathTimes = new Dictionary<int, DateTime>();
 
 				activeVestigeList = new List<Vestige>();
-				activeRooms = new List<string>();
+				activeRooms = new List<Room>();
 				backupTargets = new Dictionary<int, WorldCoordinate>();
 
 				vestigeSpawnQueue = new List<VestigeSpawnQueue>();
@@ -123,8 +123,14 @@ namespace Vestiges {
 			string roomName = newRoom.abstractRoom.name;
 			string regionName = roomName.Split('_')[0];
 
-			if (!activeRooms.Contains(roomName) && newRoom.BeingViewed) {
-				activeRooms.Add(roomName);
+			for (int i = activeRooms.Count - 1; i >= 0; i--) {
+				if (activeRooms[i] == null || !activeRooms[i].BeingViewed) {
+					activeRooms.RemoveAt(i);
+				}
+			}
+
+			if (!activeRooms.Contains(newRoom) && newRoom.BeingViewed) {
+				activeRooms.Add(newRoom);
 
 				if (!self.dead && vestigeData.ContainsKey(regionName) && vestigeData[regionName].ContainsKey(roomName)) {
 					for (int i = 0; i < vestigeData[regionName][roomName].Count && i < Options.VestigeLimit.Value; i++) {
