@@ -21,7 +21,7 @@ using System.Threading.Tasks;
 
 namespace Vestiges {
 
-	[BepInPlugin("frostbird347.vestiges", "Vestiges", "0.10.1")]
+	[BepInPlugin("frostbird347.vestiges", "Vestiges", "0.10.2")]
 	public sealed class Plugin : BaseUnityPlugin {
 		bool init;
 		private PluginOptions Options = null;
@@ -33,7 +33,7 @@ namespace Vestiges {
 		Dictionary<int, DateTime> localDeathTimes;
 
 		List<Vestige> activeVestigeList;
-		string lastRoomName;
+		public static List<string> activeRooms;
 		Dictionary<int, WorldCoordinate> backupTargets;
 
 		List<VestigeSpawnQueue> vestigeSpawnQueue;
@@ -74,7 +74,7 @@ namespace Vestiges {
 				localDeathTimes = new Dictionary<int, DateTime>();
 
 				activeVestigeList = new List<Vestige>();
-				lastRoomName = "_";
+				activeRooms = new List<string>();
 				backupTargets = new Dictionary<int, WorldCoordinate>();
 
 				vestigeSpawnQueue = new List<VestigeSpawnQueue>();
@@ -123,8 +123,8 @@ namespace Vestiges {
 			string roomName = newRoom.abstractRoom.name;
 			string regionName = roomName.Split('_')[0];
 
-			if (roomName != lastRoomName) {
-				lastRoomName = roomName;
+			if (!activeRooms.Contains(roomName) && newRoom.BeingViewed) {
+				activeRooms.Add(roomName);
 
 				if (!self.dead && vestigeData.ContainsKey(regionName) && vestigeData[regionName].ContainsKey(roomName)) {
 					for (int i = 0; i < vestigeData[regionName][roomName].Count && i < Options.VestigeLimit.Value; i++) {
@@ -200,7 +200,7 @@ namespace Vestiges {
 
 		private void QueueNewVestige(Player self, bool actuallyDead) {
 
-			if (isStory && (!self.isSlugpup || self.IsJollyPlayer) && (!localDeathTimes.ContainsKey(self.playerState.playerNumber) || (DateTime.Now - localDeathTimes[self.playerState.playerNumber]).TotalSeconds >= 10)) {
+			if (isStory && (!self.isSlugpup || self.IsJollyPlayer) && !self.isNPC && (!localDeathTimes.ContainsKey(self.playerState.playerNumber) || (DateTime.Now - localDeathTimes[self.playerState.playerNumber]).TotalSeconds >= 10)) {
 				localDeathTimes.Remove(self.playerState.playerNumber);
 				localDeathTimes.Add(self.playerState.playerNumber, DateTime.Now);
 
@@ -262,7 +262,7 @@ namespace Vestiges {
 		private void StartCycle(On.RainWorldGame.orig_ctor orig, RainWorldGame self, ProcessManager manager) {
 			orig(self, manager);
 
-			lastRoomName = "_";
+			activeRooms.Clear();
 			if (lastLifespan != Options.Lifespan.Value) {
 				Logger.LogDebug("Vestige lifespan has been changed, clearing and redownloading vestiges...");
 				ClearVestiges();
@@ -291,7 +291,7 @@ namespace Vestiges {
 			}
 			Logger.LogDebug("PostResetQueue: " + lastVestigeSpawns.Count);
 
-			lastRoomName = "_";
+			activeRooms.Clear();
 		}
 
 		private void UploadVestige(VestigeSpawn newVest) {
@@ -408,7 +408,7 @@ namespace Vestiges {
 			Logger.LogDebug("Clearing all saved Vestiges...");
 			if (!isDownloading) {
 
-				lastRoomName = "_";
+				activeRooms.Clear();
 				for (int i = activeVestigeList.Count - 1; i >= 0; i--) {
 					if (!activeVestigeList[i].exists) {
 						activeVestigeList.RemoveAt(i);
