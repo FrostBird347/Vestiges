@@ -168,27 +168,29 @@ namespace Vestiges {
 		private void UpdateFly(On.Player.orig_Update orig, Player self, bool eu) {
 			orig(self, eu);
 
-			for (int i = activeVestigeList.Count - 1; i >= 0; i--) {
-				if (activeVestigeList[i] != null && activeVestigeList[i].exists) {
-					activeVestigeList[i].Update(eu);
-				} else {
-					activeVestigeList[i] = null;
-					activeVestigeList.RemoveAt(i);
+			if (self.IsJollyPlayer || !self.isSlugpup) {
+				for (int i = activeVestigeList.Count - 1; i >= 0; i--) {
+					if (activeVestigeList[i] != null && activeVestigeList[i].exists) {
+						activeVestigeList[i].Update(eu);
+					} else {
+						activeVestigeList[i] = null;
+						activeVestigeList.RemoveAt(i);
+					}
 				}
-			}
 
-			if (self.room != null) {
-				isStory = self.room.world.game.IsStorySession;
-				AddNewVestige(self);
-			}
+				if (self.room != null) {
+					isStory = self.room.world.game.IsStorySession;
+					AddNewVestige(self);
+				}
 
-			if (self.room != null && self.room.world.game.devToolsActive) {
-				lastDev = DateTime.Now.AddMinutes(5);
-			}
+				if (self.room != null && self.room.world.game.devToolsActive) {
+					lastDev = DateTime.Now.AddMinutes(5);
+				}
 
-			if (self.lowerBodyFramesOnGround > 0 && !self.dead && !self.Stunned && self.grabbedBy.Count == 0) {
-				backupTargets.Remove(self.playerState.playerNumber);
-				backupTargets.Add(self.playerState.playerNumber, self.coord);
+				if (self.lowerBodyFramesOnGround > 0 && !self.dead && !self.Stunned && self.grabbedBy.Count == 0) {
+					backupTargets.Remove(self.playerState.playerNumber);
+					backupTargets.Add(self.playerState.playerNumber, self.coord);
+				}
 			}
 		}
 
