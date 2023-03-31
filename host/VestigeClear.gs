@@ -2,7 +2,7 @@
 function VestigeClear() {
 	// set cutoff date
 	const cutoffDate = new Date();
-	cutoffDate.setMonth(cutoffDate.getMonth() - 1);
+	cutoffDate.setHours(cutoffDate.getHours() - 720);
 	
 	const spreadsheetId = '1mUk-KQp7Kv4U-ODamQwb7DUWNewvyXLucVu72bVqFZU';
 	const sheet = SpreadsheetApp.openById(spreadsheetId);
