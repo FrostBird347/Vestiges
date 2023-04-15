@@ -2,11 +2,20 @@
 function VestigeClear() {
 	// set cutoff date
 	const cutoffDate = new Date();
-	cutoffDate.setMonth(cutoffDate.getMonth() - 1);
+	cutoffDate.setHours(cutoffDate.getHours() - 720);
 	
 	const spreadsheetId = '1mUk-KQp7Kv4U-ODamQwb7DUWNewvyXLucVu72bVqFZU';
 	const sheet = SpreadsheetApp.openById(spreadsheetId);
 	const dataValues = sheet.getSheetValues(2,1,-1,1).flat();
-	const len = dataValues.length + 1;
-	dataValues.reverse().forEach((r,i) => Date.parse(r) < cutoffDate ? sheet.deleteRow(len - i) : null);
+	const len = dataValues.length;
+
+	for (let i = 0; i < len; i++) {
+		if (Date.parse(dataValues[i]) >= cutoffDate) {
+			if (i != 0) {
+				sheet.deleteRows(2, i);
+				Logger.log("Cleared " + i + " outdated vestiges.")
+			}
+			i = len;
+		}
+	}
 }
