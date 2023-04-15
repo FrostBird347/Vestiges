@@ -323,6 +323,10 @@ namespace Vestiges {
 			if (!isDownloading && (firstRun || DateTime.Compare(DateTime.Now, nextDownload) > 0)) {
 				Logger.LogDebug("Downloading Vestiges...");
 
+				if (firstRun) {
+					isDownloading = true;
+				}
+
 				string rawDataset = "";
 				try {
 					string downloadingDataset = await httpClient.GetStringAsync("https://docs.google.com/spreadsheet/ccc?key=" + Options.DownloadID.Value + "&output=csv");

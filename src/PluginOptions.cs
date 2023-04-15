@@ -27,6 +27,7 @@ namespace Vestiges {
 		public readonly Configurable<string> EntryI;
 
 		private UIelement[] UIArrPlayerOptions;
+		private UIelement[] UIArrPlayerOptionsTwo;
 
 		public PluginOptions(Plugin pluginInstance, ManualLogSource logSource) {
 			Logger = logSource;
@@ -50,59 +51,71 @@ namespace Vestiges {
 		}
 
 		public override void Initialize() {
-			OpSimpleButton RefreshVestiges = new OpSimpleButton(new Vector2(10f, 460f), new Vector2(125f, 10f), "Reload Vestiges") { description = "Clear and redownload all Vestiges" };
+			OpSimpleButton RefreshVestiges = new OpSimpleButton(new Vector2(10f, 490f), new Vector2(125f, 10f), "Reload Vestiges") { description = "Clear and redownload all Vestiges" };
 
 			//https://github.com/FrostBird347/Vestiges/issues/3
 			//	RefreshVestiges.OnClick += Vestiges.Plugin.DownloadVestiges;
 			RefreshVestiges.greyedOut = true;
 
-			OpLabel VestigeStatus = new OpLabel(150F, 460f, "Failed to download Vestiges!");
+			OpLabel VestigeStatus = new OpLabel(150F, 490f, "Failed to download Vestiges!");
+			if (Vestiges.Plugin.isDownloading) VestigeStatus.text = "Vestiges are still downloading...";
 			if (Vestiges.Plugin.isDownloaded) VestigeStatus.text = "Vestiges have been downloaded (" + Vestiges.Plugin.vestigeCount + " loaded)";
 
 			OpTab opTab = new OpTab(this, "Options");
+			OpTab opTabTwo = new OpTab(this, "Upload/Download Settings");
 			this.Tabs = new[]
 			{
-				opTab
+				opTab,
+				opTabTwo
 			};
 
 			UIArrPlayerOptions = new UIelement[]
 			{
 				new OpLabel(10f, 550f, "Options", true),
-				new OpLabel(10f, 520f, "Vestige Lights"),
-				new OpCheckBox(VestigeLights, 90f, 520f) { description = "Vestiges will produce a small amount of light" },
+
+				new OpLabel(10f, 460f, "Vestige Lights"),
+				new OpCheckBox(VestigeLights, 90f, 460f) { description = "Vestiges will produce a small amount of light" },
 				new OpLabel(10f, 490f, "Vestige Limit"),
 				new OpUpdown(VestigeLimit, new Vector2(90f, 490f), 75) { description = "Maximum number of Vestiges that can be placed in a single room" },
 				new OpLabel(180f, 490f, "Large Vestige Timeout"),
 				new OpUpdown(LargeHours, new Vector2(310f, 490f), 75) { description = "How many hours Vestiges will be twice as large for" },
 				new OpLabel(400f, 490f, "Vestige Timeout"),
-				new OpUpdown(Lifespan, new Vector2(500f, 490f), 75) { description = "How many hours Vestiges exist for" },
+				new OpUpdown(Lifespan, new Vector2(500f, 490f), 75) { description = "How many hours Vestiges exist for" }
+			};
+			opTab.AddItems(UIArrPlayerOptions);
+
+			UIArrPlayerOptionsTwo = new UIelement[]
+			{
+				new OpLabel(10f, 550f, "Upload/Downlload Options", true),
+				new OpLabel(290f, 550f, "(Only change these if you know what you are doing!)"),
+
 				RefreshVestiges,
 				VestigeStatus,
 
-				new OpLabel(10f, 400f, "Download ID"),
-				new OpTextBox(DownloadID, new Vector2(200f,400f), 400f) { description = "Only change this if you know what you are doing!" },
-				new OpLabel(10f, 370f, "Upload ID"),
-				new OpTextBox(UploadID, new Vector2(200f,370f), 400f) { description = "Only change this if you know what you are doing!" },
-				new OpLabel(10f, 340f, "entry1 ID"),
-				new OpTextBox(EntryA, new Vector2(200f,340f), 400f) { description = "Only change this if you know what you are doing!" },
-				new OpLabel(10f, 310f, "entry2 ID"),
-				new OpTextBox(EntryB, new Vector2(200f,310f), 400f) { description = "Only change this if you know what you are doing!" },
-				new OpLabel(10f, 280f, "entry3 ID"),
-				new OpTextBox(EntryC, new Vector2(200f,280f), 400f) { description = "Only change this if you know what you are doing!" },
-				new OpLabel(10f, 250f, "entry4 ID"),
-				new OpTextBox(EntryD, new Vector2(200f,250f), 400f) { description = "Only change this if you know what you are doing!" },
-				new OpLabel(10f, 220f, "entry5 ID"),
-				new OpTextBox(EntryE, new Vector2(200f,220f), 400f) { description = "Only change this if you know what you are doing!" },
-				new OpLabel(10f, 190f, "entry6 ID"),
-				new OpTextBox(EntryF, new Vector2(200f,190f), 400f) { description = "Only change this if you know what you are doing!" },
-				new OpLabel(10f, 160f, "entry7 ID"),
-				new OpTextBox(EntryG, new Vector2(200f,160f), 400f) { description = "Only change this if you know what you are doing!" },
-				new OpLabel(10f, 130f, "entry8 ID"),
-				new OpTextBox(EntryH, new Vector2(200f,130f), 400f) { description = "Only change this if you know what you are doing!" },
-				new OpLabel(10f, 100f, "entry9 ID"),
-				new OpTextBox(EntryI, new Vector2(200f,100f), 400f) { description = "Only change this if you know what you are doing!" }
+				new OpLabel(10f, 430f, "Download ID"),
+				new OpTextBox(DownloadID, new Vector2(200f,430f), 400f) { description = "" },
+				new OpLabel(10f, 400f, "Upload ID"),
+				new OpTextBox(UploadID, new Vector2(200f,400f), 400f) { description = "Only change this if you know what you are doing!" },
+				new OpLabel(10f, 370f, "entry1 ID"),
+				new OpTextBox(EntryA, new Vector2(200f,370f), 400f) { description = "Room" },
+				new OpLabel(10f, 340f, "entry2 ID"),
+				new OpTextBox(EntryB, new Vector2(200f,340f), 400f) { description = "Region" },
+				new OpLabel(10f, 310f, "entry3 ID"),
+				new OpTextBox(EntryC, new Vector2(200f,310f), 400f) { description = "Red" },
+				new OpLabel(10f, 280f, "entry4 ID"),
+				new OpTextBox(EntryD, new Vector2(200f,280f), 400f) { description = "Green" },
+				new OpLabel(10f, 250f, "entry5 ID"),
+				new OpTextBox(EntryE, new Vector2(200f,250f), 400f) { description = "Blue" },
+				new OpLabel(10f, 220f, "entry6 ID"),
+				new OpTextBox(EntryF, new Vector2(200f,220f), 400f) { description = "Spawn X" },
+				new OpLabel(10f, 190f, "entry7 ID"),
+				new OpTextBox(EntryG, new Vector2(200f,190f), 400f) { description = "Spawn Y" },
+				new OpLabel(10f, 160f, "entry8 ID"),
+				new OpTextBox(EntryH, new Vector2(200f,160f), 400f) { description = "Target X" },
+				new OpLabel(10f, 130f, "entry9 ID"),
+				new OpTextBox(EntryI, new Vector2(200f,130f), 400f) { description = "Target Y" }
 			};
-			opTab.AddItems(UIArrPlayerOptions);
+			opTabTwo.AddItems(UIArrPlayerOptionsTwo);
 		}
 	}
 }
