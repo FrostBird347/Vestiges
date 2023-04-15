@@ -13,6 +13,7 @@ namespace Vestiges {
 		private Vector2 dir;
 		private Vector2 lastLastPos;
 		public LightSource light;
+		public bool lightEnabled;
 		public Color col;
 		public float sizeMult;
 		public float sin;
@@ -26,7 +27,7 @@ namespace Vestiges {
 			Logger = newLogger;
 		}
 
-		public Vestige(Room _room, Vector2 _nullpos, VestigeCoord _pos, VestigeCoord _targt, Color _colour, int _size) : base(_room, _nullpos, PluginEnums.Vestige) {
+		public Vestige(Room _room, Vector2 _nullpos, VestigeCoord _pos, VestigeCoord _targt, Color _colour, int _size, bool _lightEnabled) : base(_room, _nullpos, PluginEnums.Vestige) {
 
 			lastLastPos = _room.MiddleOfTile(_pos.x, _pos.y);
 			pos = _room.MiddleOfTile(_pos.x, _pos.y);
@@ -37,6 +38,7 @@ namespace Vestiges {
 			}
 
 			sin = Random.value;
+			lightEnabled = _lightEnabled;
 			col = _colour;
 			sizeMult = _size / 2f;
 			noTarget = false;
@@ -100,7 +102,7 @@ namespace Vestiges {
 			}
 			sin += 1f / Mathf.Lerp(20f, 80f, Random.value);
 
-			if (room.Darkness(pos) > 0f) {
+			if (room.Darkness(pos) > 0f && lightEnabled) {
 				if (light == null) {
 					light = new LightSource(pos, false, col, this);
 					light.noGameplayImpact = ModManager.MMF;

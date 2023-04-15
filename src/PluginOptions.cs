@@ -9,6 +9,7 @@ namespace Vestiges {
 	public class PluginOptions : OptionInterface {
 		private readonly ManualLogSource Logger;
 
+		public readonly Configurable<bool> VestigeLights;
 		public readonly Configurable<int> VestigeLimit;
 		public readonly Configurable<int> LargeHours;
 		public readonly Configurable<int> Lifespan;
@@ -29,6 +30,7 @@ namespace Vestiges {
 
 		public PluginOptions(Plugin pluginInstance, ManualLogSource logSource) {
 			Logger = logSource;
+			VestigeLights = config.Bind("VestigeLights", true);
 			VestigeLimit = config.Bind("VestigeLimit", 50, new ConfigAcceptableRange<int>(1, 5000));
 			LargeHours = config.Bind("LargeHours", 24, new ConfigAcceptableRange<int>(0, 720));
 			Lifespan = config.Bind("Lifespan", 96, new ConfigAcceptableRange<int>(0, 720));
@@ -66,6 +68,8 @@ namespace Vestiges {
 			UIArrPlayerOptions = new UIelement[]
 			{
 				new OpLabel(10f, 550f, "Options", true),
+				new OpLabel(10f, 520f, "Vestige Lights"),
+				new OpCheckBox(VestigeLights, 90f, 520f) { description = "Vestiges will produce a small amount of light" },
 				new OpLabel(10f, 490f, "Vestige Limit"),
 				new OpUpdown(VestigeLimit, new Vector2(90f, 490f), 75) { description = "Maximum number of Vestiges that can be placed in a single room" },
 				new OpLabel(180f, 490f, "Large Vestige Timeout"),

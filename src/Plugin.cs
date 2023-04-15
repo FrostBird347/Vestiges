@@ -142,7 +142,7 @@ namespace Vestiges {
 							currentSize = 2;
 						}
 
-						Vestige newBug = new Vestige(newRoom, new Vector2(0, 0), spawnInfo.spawn, spawnInfo.target, spawnInfo.colour, currentSize);
+						Vestige newBug = new Vestige(newRoom, new Vector2(0, 0), spawnInfo.spawn, spawnInfo.target, spawnInfo.colour, currentSize, Options.VestigeLights.Value);
 						newRoom.AddObject(newBug);
 						activeVestigeList.Add(newBug);
 					}
@@ -156,7 +156,7 @@ namespace Vestiges {
 								currentSize = 2;
 							}
 
-							Vestige newBug = new Vestige(newRoom, new Vector2(0, 0), localvestigeData[i].spawn, localvestigeData[i].target, localvestigeData[i].colour, currentSize);
+							Vestige newBug = new Vestige(newRoom, new Vector2(0, 0), localvestigeData[i].spawn, localvestigeData[i].target, localvestigeData[i].colour, currentSize, Options.VestigeLights.Value);
 							newRoom.AddObject(newBug);
 							activeVestigeList.Add(newBug);
 						}
@@ -255,7 +255,7 @@ namespace Vestiges {
 					}
 
 					if (self.room != null && self.room.abstractRoom.name == vestigeSpawnQueue[queueIndex].room) {
-						Vestige newBug = new Vestige(self.room, new Vector2(0, 0), newSpawn.spawn, newSpawn.target, newSpawn.colour, 2);
+						Vestige newBug = new Vestige(self.room, new Vector2(0, 0), newSpawn.spawn, newSpawn.target, newSpawn.colour, 2, Options.VestigeLights.Value);
 						self.room.AddObject(newBug);
 						activeVestigeList.Add(newBug);
 					}
