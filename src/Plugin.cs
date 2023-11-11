@@ -246,16 +246,27 @@ namespace Vestiges {
 					lastVestigeSpawns.Add(vestigeSpawnQueue[queueIndex].safeCoord);
 					vestigeCount++;
 
-					if (DateTime.Compare(DateTime.Now, lastDev) > 0) {
+					bool devCheck = (DateTime.Compare(DateTime.Now, lastDev) > 0);
+
+					if (!Options.StealthMode.Value && devCheck) {
 						UploadVestige(newSpawn);
-					} else {
+					} else if (!devCheck) {
 						Logger.LogWarning("Sorry but to slightly lower the amount of vestiges being mass spawned, devtools disables uploading for a while.");
 						Logger.LogWarning("While I do expect people to easily get around this, I hope that it will slightly lower the rate of new vestiges being mass spawned in single rooms to a rate where I won't need to lower their lifetime.");
 						Logger.LogWarning("I will likely add a way to disable this once the vestige creation rate stabilizes (or remove it completely), especially since you can now lower the Vestige lifespan in the config yourself");
+					} else {
+						Logger.LogWarning("Skipping upload, stealth mode is active!");
 					}
 
 					if (self.room != null && self.room.abstractRoom.name == vestigeSpawnQueue[queueIndex].room) {
 						Vestige newBug = new Vestige(self.room, new Vector2(0, 0), newSpawn.spawn, newSpawn.target, newSpawn.colour, 2, Options.VestigeLights.Value);
+
+						//Make sure it's obvious offline mode is active while still not being intrusive (it took me long enough to manage to boot into windows, figuring out how to add custom warning text might require more time than I have right now)
+						if (Options.StealthMode.Value) {
+							newBug.col = new Color(1 - newBug.col.r, 1 - newBug.col.g, 1 - newBug.col.b);
+							Logger.LogWarning("Inverted vestige because stealth mode is enabled!");
+						}
+
 						self.room.AddObject(newBug);
 						activeVestigeList.Add(newBug);
 					}
