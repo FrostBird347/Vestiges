@@ -5,6 +5,7 @@ using System.Linq;
 using RWCustom;
 using UnityEngine;
 using UnityEngine.Scripting;
+using Unity.Mathematics;
 using Random = UnityEngine.Random;
 
 //Modified version of the vanilla fireflies
@@ -130,7 +131,7 @@ namespace Vestiges {
 			if (!room.readyForAI || !room.IsPositionInsideBoundries(tile)) {
 				return 0f;
 			}
-			return Random.value / (float)Math.Abs(room.aimap.getAItile(tile).floorAltitude - 4) / (float)Math.Abs(room.aimap.getAItile(tile).terrainProximity - 4);
+			return Random.value / (float)Math.Abs(room.aimap.getAItile(tile).floorAltitude - 4) / (float)Math.Abs(room.aimap.getTerrainProximity(tile) - 4);
 		}
 
 		public override void InitiateSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam) {

@@ -1,12 +1,12 @@
 ﻿{
   "id": "frostbird347.vestiges",
   "name": "Vestiges",
-  "version": "0.10.4",
+  "version": "0.10.5",
   "authors": "FrostBird347",
   "description": "Upon death, you will leave a temporary remnant for other players to find.",
   "requirements": [],
   "requirements_names": [],
   "checksum_override_version": false,
-  "target_game_version": "v1.9.07b",
+  "target_game_version": "v1.9.15",
   "youtube_trailer_id": "dkjdqKTQrPM"
 }
