@@ -49,6 +49,7 @@ namespace Vestiges {
 		public static int vestigeCount;
 		private DateTime nextDownload;
 		int lastLifespan;
+		bool lastInfiniteLifespan;
 
 		public void OnEnable() {
 			On.RainWorld.OnModsInit += Init;
@@ -89,11 +90,15 @@ namespace Vestiges {
 				vestigeCount = 0;
 				nextDownload = DateTime.Now.AddYears(-1);
 				lastLifespan = -1;
+				lastInfiniteLifespan = false;
 
 				try {
 					Options = new PluginOptions(this, Logger);
 					MachineConnector.SetRegisteredOI("frostbird347.vestiges", Options);
 					configWorking = true;
+
+					//Ensure the config is loaded now, so we don't process vestiges incorrectly at startup
+					Options._LoadConfigFile();
 				} catch (Exception err) {
 					Logger.LogError(err);
 					configWorking = false;
@@ -102,6 +107,7 @@ namespace Vestiges {
 				if (configWorking) {
 					ClearVestiges();
 					lastLifespan = Options.Lifespan.Value;
+					lastInfiniteLifespan = Options.InfiniteLifespan.Value;
 					Task.Run(() => DownloadVestiges(true));
 				} else {
 					Logger.LogFatal("Config failed to load, this mod has somewhat disabled itself for safety!");
@@ -264,7 +270,7 @@ namespace Vestiges {
 						//Make sure it's obvious offline mode is active while still not being intrusive (it took me long enough to manage to boot into windows, figuring out how to add custom warning text might require more time than I have right now)
 						if (Options.StealthMode.Value) {
 							newBug.col = new Color(1 - newBug.col.r, 1 - newBug.col.g, 1 - newBug.col.b);
-							Logger.LogWarning("Inverted vestige because stealth mode is enabled!");
+							Logger.LogWarning("Inverted Vestige because stealth mode is enabled!");
 						}
 
 						self.room.AddObject(newBug);
@@ -282,10 +288,11 @@ namespace Vestiges {
 			orig(self, manager);
 
 			activeRooms.Clear();
-			if (lastLifespan != Options.Lifespan.Value) {
-				Logger.LogDebug("Vestige lifespan has been changed, clearing and redownloading vestiges...");
+			if (lastLifespan != Options.Lifespan.Value || lastInfiniteLifespan != Options.InfiniteLifespan.Value) {
+				Logger.LogDebug("Vestige lifespan has changed, clearing and redownloading Vestiges...");
 				ClearVestiges();
 				lastLifespan = Options.Lifespan.Value;
+				lastInfiniteLifespan = Options.InfiniteLifespan.Value;
 				Task.Run(() => DownloadVestiges(true));
 			} else {
 				localDeathTimes.Clear();
@@ -314,7 +321,7 @@ namespace Vestiges {
 		}
 
 		private void UploadVestige(VestigeSpawn newVest) {
-			Logger.LogDebug("Attempting to upload vestige... [" + newVest.room + ":" + newVest.region + ":(" + newVest.colour.r.ToString() + "," + newVest.colour.g.ToString() + "," + newVest.colour.b.ToString() + "):(" + newVest.spawn.x.ToString() + "," + newVest.spawn.y.ToString() + "):(" + newVest.target.x.ToString() + "," + newVest.target.y.ToString() + ")]");
+			Logger.LogDebug("Attempting to upload Vestige... [" + newVest.room + ":" + newVest.region + ":(" + newVest.colour.r.ToString() + "," + newVest.colour.g.ToString() + "," + newVest.colour.b.ToString() + "):(" + newVest.spawn.x.ToString() + "," + newVest.spawn.y.ToString() + "):(" + newVest.target.x.ToString() + "," + newVest.target.y.ToString() + ")]");
 
 			Dictionary<string, string> encodedSpawnData = new Dictionary<string, string>();
 			encodedSpawnData.Add("entry." + Options.EntryA.Value, newVest.room);
@@ -340,8 +347,7 @@ namespace Vestiges {
 
 				string rawDataset = "";
 				try {
-					string downloadingDataset = await httpClient.GetStringAsync("https://docs.google.com/spreadsheet/ccc?key=" + Options.DownloadID.Value + "&output=csv");
-					rawDataset = downloadingDataset;
+					rawDataset = await httpClient.GetStringAsync("https://docs.google.com/spreadsheet/ccc?key=" + Options.DownloadID.Value + "&output=csv");
 				} catch (Exception err) {
 					Logger.LogError("Download failed: " + err.Message);
 					if (firstRun) {
@@ -371,51 +377,38 @@ namespace Vestiges {
 					return;
 				}
 
-				int validEntries = 0;
-				int totalEntries = rawRows.Length - 1;
-				int newEntries = 0;
-				for (int r = 1; r < rawRows.Length; r++) {
-					//[Timestamp, room, region, colour.r, colour.g, colour.b, spawn.x, spawn.y, target.x, target.y]
-					//[0        , 1   , 2     , 3       , 4       , 5       , 6      , 7      , 8       , 9       ]
-					string[] currentValues = rawRows[r].Trim('\r').Split(',');
-					if (currentValues == new string[] { "", "", "", "", "", "", "", "", "", "" }) {
-						totalEntries--;
-					} else if (currentValues.Length >= 10) {
-						validEntries++;
+				ParseRawVestiges(rawRows);
 
-						if (!vestigeData.ContainsKey(currentValues[2])) {
-							vestigeData.Add(currentValues[2], new Dictionary<string, List<VestigeSpawn>>());
-						}
-						if (!vestigeData[currentValues[2]].ContainsKey(currentValues[1])) {
-							vestigeData[currentValues[2]].Add(currentValues[1], new List<VestigeSpawn>());
-						}
+				if (firstRun && Options.InfiniteLifespan.Value) {
+					Logger.LogDebug("Downloading historical Vestiges...");
 
-						Color currentColor = new Color(float.Parse(currentValues[3], NumberStyles.Float), float.Parse(currentValues[4], NumberStyles.Float), float.Parse(currentValues[5], NumberStyles.Float));
-						VestigeCoord currentSpawn = new VestigeCoord(int.Parse(currentValues[6], NumberStyles.Integer | NumberStyles.AllowExponent), int.Parse(currentValues[7], NumberStyles.Integer | NumberStyles.AllowExponent));
-						VestigeCoord currentTarget = new VestigeCoord(int.Parse(currentValues[8], NumberStyles.Integer | NumberStyles.AllowExponent), int.Parse(currentValues[9], NumberStyles.Integer | NumberStyles.AllowExponent));
-						DateTime currentTimestamp = DateTime.SpecifyKind(DateTime.ParseExact(currentValues[0], "dd/MM/yyyy HH:mm:ss", CultureInfo.InvariantCulture), DateTimeKind.Utc);
-
-
-						if (!rawDownloads.Contains(rawRows[r].Trim('\r'))) {
-
-							VestigeSpawn currentVestige = new VestigeSpawn(currentValues[2], currentValues[1], currentColor, currentSpawn, currentTarget, currentTimestamp);
-
-							if ((DateTime.UtcNow - currentVestige.time).TotalHours <= Options.Lifespan.Value) {
-								vestigeData[currentValues[2]][currentValues[1]].Add(currentVestige);
-								vestigeCount++;
-							}
-
-							rawDownloads.Add(rawRows[r].Trim('\r'));
-							newEntries++;
-						}
-
-					} else {
-						Logger.LogError("skipped entry on row " + r + " due to invalid formatting!");
+					try {
+						rawDataset = await httpClient.GetStringAsync(Options.ArchiveURL.Value);
+					} catch (Exception err) {
+						Logger.LogError("Download failed: " + err.Message);
+						isDownloaded = false;
+						isDownloading = false;
+						return;
 					}
+					Logger.LogDebug("Loading historical Vestiges... (this will take a LONG time to process)");
+
+					if (rawDataset == null || rawDataset == "") {
+						Logger.LogError("rawDataset is either null or empty!");
+						isDownloaded = false;
+						isDownloading = false;
+						return;
+					}
+
+					rawRows = rawDataset.Split('\n');
+					if (rawRows.Length <= 0 || !rawRows[0].Trim('\r').StartsWith("Timestamp,room,region,colour.r,colour.g,colour.b,spawn.x,spawn.y,target.x,target.y")) {
+						Logger.LogError("rawDataset is not formatted correclty!");
+						isDownloaded = false;
+						isDownloading = false;
+						return;
+					}
+
+					ParseRawVestiges(rawRows, true);
 				}
-				vestigeCount -= localvestigeData.Count;
-				Logger.LogDebug(validEntries + "/" + (totalEntries) + " Vestiges were downloaded (" + newEntries + " new, " + localvestigeData.Count + " (local) removed and " + vestigeCount + " loaded)");
-				localvestigeData.Clear();
 
 				isDownloaded = true;
 				isDownloading = false;
@@ -425,6 +418,57 @@ namespace Vestiges {
 			} else {
 				Logger.LogDebug("Skipped download attempt: it has been less than half an hour!");
 			}
+		}
+
+		private void ParseRawVestiges(string[] rawRows, bool printProgress = false) {
+			int validEntries = 0;
+			int totalEntries = rawRows.Length - 1;
+			int newEntries = 0;
+			for (int r = 1; r < rawRows.Length; r++) {
+				if (printProgress && r % 10000 == 0) {
+					Logger.LogDebug("Processed " + ((float)(r * 100) / rawRows.Length) + "%");
+				}
+
+				//[Timestamp, room, region, colour.r, colour.g, colour.b, spawn.x, spawn.y, target.x, target.y]
+				//[0        , 1   , 2     , 3       , 4       , 5       , 6      , 7      , 8       , 9       ]
+				string[] currentValues = rawRows[r].Trim('\r').Split(',');
+				if (currentValues == new string[] { "", "", "", "", "", "", "", "", "", "" }) {
+					totalEntries--;
+				} else if (currentValues.Length >= 10) {
+					validEntries++;
+
+					if (!vestigeData.ContainsKey(currentValues[2])) {
+						vestigeData.Add(currentValues[2], new Dictionary<string, List<VestigeSpawn>>());
+					}
+					if (!vestigeData[currentValues[2]].ContainsKey(currentValues[1])) {
+						vestigeData[currentValues[2]].Add(currentValues[1], new List<VestigeSpawn>());
+					}
+
+					Color currentColor = new Color(float.Parse(currentValues[3], NumberStyles.Float), float.Parse(currentValues[4], NumberStyles.Float), float.Parse(currentValues[5], NumberStyles.Float));
+					VestigeCoord currentSpawn = new VestigeCoord(int.Parse(currentValues[6], NumberStyles.Integer | NumberStyles.AllowExponent), int.Parse(currentValues[7], NumberStyles.Integer | NumberStyles.AllowExponent));
+					VestigeCoord currentTarget = new VestigeCoord(int.Parse(currentValues[8], NumberStyles.Integer | NumberStyles.AllowExponent), int.Parse(currentValues[9], NumberStyles.Integer | NumberStyles.AllowExponent));
+					DateTime currentTimestamp = DateTime.SpecifyKind(DateTime.ParseExact(currentValues[0], "dd/MM/yyyy HH:mm:ss", CultureInfo.InvariantCulture), DateTimeKind.Utc);
+
+					if (!rawDownloads.Contains(rawRows[r].Trim('\r'))) {
+
+						VestigeSpawn currentVestige = new VestigeSpawn(currentValues[2], currentValues[1], currentColor, currentSpawn, currentTarget, currentTimestamp);
+
+						if (Options.InfiniteLifespan.Value || (DateTime.UtcNow - currentVestige.time).TotalHours <= Options.Lifespan.Value) {
+							vestigeData[currentValues[2]][currentValues[1]].Add(currentVestige);
+							vestigeCount++;
+						}
+
+						rawDownloads.Add(rawRows[r].Trim('\r'));
+						newEntries++;
+					}
+
+				} else {
+					Logger.LogError("skipped entry on row " + r + " due to invalid formatting!");
+				}
+			}
+			vestigeCount -= localvestigeData.Count;
+			Logger.LogDebug(validEntries + "/" + (totalEntries) + " Vestiges were downloaded (" + newEntries + " new, " + localvestigeData.Count + " (local) removed and " + vestigeCount + " loaded)");
+			localvestigeData.Clear();
 		}
 
 		private void ClearVestiges() {

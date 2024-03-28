@@ -15,6 +15,7 @@ namespace Vestiges {
 
 		public readonly Configurable<bool> VestigeLights;
 		public readonly Configurable<bool> StealthMode;
+		public readonly Configurable<bool> InfiniteLifespan;
 
 		public readonly Configurable<string> DownloadID;
 		public readonly Configurable<string> UploadID;
@@ -29,17 +30,20 @@ namespace Vestiges {
 		public readonly Configurable<string> EntryH;
 		public readonly Configurable<string> EntryI;
 
+		public readonly Configurable<string> ArchiveURL;
+
 		private UIelement[] UIArrPlayerOptions;
 		private UIelement[] UIArrPlayerOptionsTwo;
 
 		public PluginOptions(Plugin pluginInstance, ManualLogSource logSource) {
 			Logger = logSource;
-			VestigeLimit = config.Bind("VestigeLimit", 50, new ConfigAcceptableRange<int>(1, 5000));
+			VestigeLimit = config.Bind("VestigeLimit", 50, new ConfigAcceptableRange<int>(1, 999999));
 			LargeHours = config.Bind("LargeHours", 24, new ConfigAcceptableRange<int>(0, 720));
 			Lifespan = config.Bind("Lifespan", 96, new ConfigAcceptableRange<int>(0, 720));
 
 			VestigeLights = config.Bind("VestigeLights", true);
 			StealthMode = config.Bind("StealthMode", false);
+			InfiniteLifespan = config.Bind("InfiniteLifespan", false);
 
 			DownloadID = config.Bind("DownloadID", "1mUk-KQp7Kv4U-ODamQwb7DUWNewvyXLucVu72bVqFZU");
 			UploadID = config.Bind("UploadID", "1FAIpQLSdkBHGRNMbJQGJ0A89CJfDrA98uy1DBL3VQuys9s91i41P1JA");
@@ -53,6 +57,8 @@ namespace Vestiges {
 			EntryG = config.Bind("EntryG", "622593087");
 			EntryH = config.Bind("EntryH", "1964557942");
 			EntryI = config.Bind("EntryI", "787154321");
+
+			ArchiveURL = config.Bind("ArchiveURL", "https://raw.githubusercontent.com/FrostBird347/VestigeBackup/master/VestigeBackup.csv");
 
 		}
 
@@ -89,7 +95,9 @@ namespace Vestiges {
 				new OpLabel(10f, 460f, "Vestige Lights"),
 				new OpCheckBox(VestigeLights, 90f, 460f) { description = "Vestiges will produce a small amount of light" },
 				new OpLabel(130f, 460f, "Stealth Mode"),
-				new OpCheckBox(StealthMode, 210f, 460f) { description = "Prevents any new vestiges from being uploaded. They will still appear locally until the cache is reset." }
+				new OpCheckBox(StealthMode, 210f, 460f) { description = "Prevents any new vestiges from being uploaded. They will still appear locally until the cache is reset." },
+				new OpLabel(250f, 460f, "Remove Timeout"),
+				new OpCheckBox(InfiniteLifespan, 350f, 460f) { description = "Remove Vestige timeout and download historical Vistages from a seperate online backup. This option is disabled by default for a reason, you have been warned!" }
 			};
 			opTab.AddItems(UIArrPlayerOptions);
 
@@ -104,7 +112,7 @@ namespace Vestiges {
 				new OpLabel(10f, 430f, "Download ID"),
 				new OpTextBox(DownloadID, new Vector2(200f,430f), 400f) { description = "" },
 				new OpLabel(10f, 400f, "Upload ID"),
-				new OpTextBox(UploadID, new Vector2(200f,400f), 400f) { description = "Only change this if you know what you are doing!" },
+				new OpTextBox(UploadID, new Vector2(200f,400f), 400f) { description = "" },
 				new OpLabel(10f, 370f, "entry1 ID"),
 				new OpTextBox(EntryA, new Vector2(200f,370f), 400f) { description = "Room" },
 				new OpLabel(10f, 340f, "entry2 ID"),
@@ -122,7 +130,12 @@ namespace Vestiges {
 				new OpLabel(10f, 160f, "entry8 ID"),
 				new OpTextBox(EntryH, new Vector2(200f,160f), 400f) { description = "Target X" },
 				new OpLabel(10f, 130f, "entry9 ID"),
-				new OpTextBox(EntryI, new Vector2(200f,130f), 400f) { description = "Target Y" }
+				new OpTextBox(EntryI, new Vector2(200f,130f), 400f) { description = "Target Y" },
+
+				new OpLabel(10f, 100f, "Archive URL"),
+				//Unfortunately the size of the text box determines the string's size limit, so to work around that issue it's set to be ridiculously large
+				//There probably is some other form of input for long text... but I don't really have the time to figure that out right now
+				new OpTextBox(ArchiveURL, new Vector2(200f, 100f), 4000f) { description = "Where historical Vestiges are downloaded" }
 			};
 			opTabTwo.AddItems(UIArrPlayerOptionsTwo);
 		}
