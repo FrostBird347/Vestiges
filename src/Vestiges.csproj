@@ -1,14 +1,10 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
+		<OutputType>Library</OutputType>
 		<TargetFramework>net48</TargetFramework>
-		<LangVersion>11</LangVersion>
-	</PropertyGroup>
-	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-		<LangVersion>9.0</LangVersion>
-	</PropertyGroup>
-	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-		<LangVersion>9.0</LangVersion>
+		<RootNamespace>Vestiges</RootNamespace>
+		<AssemblyName>Vestiges</AssemblyName>
+		<Description>Upon death, you will leave a temporary remnant for other players to find.</Description>
 	</PropertyGroup>
 	<ItemGroup>
 		<Reference Include="../lib/*.dll">
