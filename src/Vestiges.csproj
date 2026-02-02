@@ -15,11 +15,11 @@
 		<PackageReference Include="System.Net.Http" Version="4.3.4" />
 	</ItemGroup>
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="Exists('$(ProjectDir)../../_resources/Rain World/')">
-		<Exec Command="$(ProjectDir)/.././UpdateVersion.sh"/>
+		<Exec Command="$(ProjectDir)/../PostBuild.sh &quot;$(ProjectName)&quot;"/>
 		<ItemGroup>
 			<Assets Include="$(ProjectDir)../assets/**/*.*" />
 		</ItemGroup>
-		<Copy SourceFiles="@(Assets)" DestinationFiles="$(ProjectDir)../../_resources/Rain World//RainWorld_Data/StreamingAssets/mods/$(ProjectName)/%(RecursiveDir)%(Filename)%(Extension)" />
-		<Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ProjectDir)../../_resources/Rain World//RainWorld_Data/StreamingAssets/mods/$(ProjectName)/newest/plugins" />
+		<Copy SourceFiles="@(Assets)" DestinationFiles="$(ProjectDir)../../_resources/Rain World/RainWorld_Data/StreamingAssets/mods/$(ProjectName)/%(RecursiveDir)%(Filename)%(Extension)" />
+		<Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ProjectDir)../../_resources/Rain World/RainWorld_Data/StreamingAssets/mods/$(ProjectName)/newest/plugins" />
 	</Target>
 </Project>
