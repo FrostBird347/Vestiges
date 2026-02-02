@@ -21,8 +21,12 @@ using System.Threading.Tasks;
 
 namespace Vestiges {
 
-	[BepInPlugin("frostbird347.vestiges", "Vestiges", "0.10.4")]
+	[BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
 	public sealed class Plugin : BaseUnityPlugin {
+		public const string PLUGIN_GUID = "frostbird347.vestiges";
+		public const string PLUGIN_NAME = "Vestiges";
+		public const string PLUGIN_VERSION = "0.10.4";
+		
 		bool init;
 		private PluginOptions Options = null;
 		bool configWorking = false;
