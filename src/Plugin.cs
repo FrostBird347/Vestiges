@@ -25,7 +25,7 @@ namespace Vestiges {
 	public sealed class Plugin : BaseUnityPlugin {
 		public const string PLUGIN_GUID = "frostbird347.vestiges";
 		public const string PLUGIN_NAME = "Vestiges";
-		public const string PLUGIN_VERSION = "0.10.4";
+		public const string PLUGIN_VERSION = "0.11.0";
 		
 		bool init;
 		private PluginOptions Options = null;
