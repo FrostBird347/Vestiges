@@ -499,6 +499,7 @@ namespace Vestiges {
 				localDeathTimes.Clear();
 				backupTargets.Clear();
 				vestigeCount = 0;
+				isDownloaded = false;
 
 				Logger.LogDebug("Cleared all Vestiges");
 			} else {
@@ -506,6 +507,12 @@ namespace Vestiges {
 			}
 		}
 
-	}
+		public void OnReloadButton(UIfocusable trigger)
+		{
+			trigger.greyedOut = true;
+			ClearVestiges();
+			DownloadVestiges(true);
+		}
 
+	}
 }

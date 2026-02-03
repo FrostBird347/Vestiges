@@ -6,6 +6,7 @@ using UnityEngine;
 namespace Vestiges {
 
 	public class PluginOptions : OptionInterface {
+		private readonly Plugin plugin;
 		private readonly ManualLogSource Logger;
 
 		public readonly Configurable<int> VestigeLimit;
@@ -37,6 +38,7 @@ namespace Vestiges {
 		private UIelement[] UIArrPlayerOptionsTwo;
 
 		public PluginOptions(Plugin pluginInstance, ManualLogSource logSource) {
+			plugin = pluginInstance;
 			Logger = logSource;
 			VestigeLimit = config.Bind("VestigeLimit", 50, new ConfigAcceptableRange<int>(1, 999999));
 			LargeHours = config.Bind("LargeHours", 24, new ConfigAcceptableRange<int>(0, 720));
@@ -66,11 +68,12 @@ namespace Vestiges {
 		}
 
 		public override void Initialize() {
-			OpSimpleButton RefreshVestiges = new OpSimpleButton(new Vector2(10f, 490f), new Vector2(125f, 10f), "Reload Vestiges") { description = "Clear and redownload all Vestiges" };
-
-			//https://github.com/FrostBird347/Vestiges/issues/3
-			//	RefreshVestiges.OnClick += Vestiges.Plugin.DownloadVestiges;
-			RefreshVestiges.greyedOut = true;
+			OpSimpleButton RefreshVestiges = new OpSimpleButton(new Vector2(10f, 490f), new Vector2(125f, 10f), "Reload Vestiges")
+			{
+				description = "Clear and redownload all Vestiges",
+				greyedOut = Plugin.isDownloading
+			};
+			RefreshVestiges.OnClick += plugin.OnReloadButton;			
 
 			OpLabel VestigeStatus = new OpLabel(150F, 490f, "Failed to download Vestiges!");
 			if (Plugin.isDownloading) VestigeStatus.text = "Vestiges are still downloading...";
