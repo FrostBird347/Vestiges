@@ -62,7 +62,7 @@ namespace Vestiges {
 			On.Player.Die += OnDeath;
 			On.Player.Grabbed += OnGrabDeath;
 			On.RainWorldGame.ctor += StartCycle;
-			On.KarmaFlower.Consume += ClearKarma;
+			On.KarmaFlower.BitByPlayer += ClearKarma;
 		}
 
 		private void Init(On.RainWorld.orig_OnModsInit orig, RainWorld self) {
@@ -153,7 +153,7 @@ namespace Vestiges {
 							currentSize = 2;
 						}
 
-						Vestige newBug = new Vestige(newRoom, new Vector2(0, 0), spawnInfo.spawn, spawnInfo.target, Options.ShouldOverrideColours.Value ? Options.OverridenColour.Value : spawnInfo.colour, currentSize, Options.VestigeLights.Value, Options.Karma.Value && spawnInfo.karma);
+						Vestige newBug = new Vestige(newRoom, new Vector2(0, 0), spawnInfo.spawn, spawnInfo.target, Options.ShouldOverrideColours.Value ? Options.OverridenColour.Value : spawnInfo.colour, currentSize, Options.VestigeLights.Value == PluginOptions.LightSetting.All || (Options.VestigeLights.Value == PluginOptions.LightSetting.KarmaOnly && spawnInfo.karma), Options.Karma.Value && spawnInfo.karma);
 						newRoom.AddObject(newBug);
 						activeVestigeList.Add(newBug);
 						newBug.SetupLogger(Logger);
@@ -169,7 +169,7 @@ namespace Vestiges {
 							}
 
 							//Always set karma to false for local vestiges
-							Vestige newBug = new Vestige(newRoom, new Vector2(0, 0), localvestigeData[i].spawn, localvestigeData[i].target, Options.ShouldOverrideColours.Value ? Options.OverridenColour.Value : localvestigeData[i].colour, currentSize, Options.VestigeLights.Value, false);
+							Vestige newBug = new Vestige(newRoom, new Vector2(0, 0), localvestigeData[i].spawn, localvestigeData[i].target, Options.ShouldOverrideColours.Value ? Options.OverridenColour.Value : localvestigeData[i].colour, currentSize, Options.VestigeLights.Value == PluginOptions.LightSetting.All, false);
 							newRoom.AddObject(newBug);
 							activeVestigeList.Add(newBug);
 						}
@@ -218,13 +218,13 @@ namespace Vestiges {
 			}
 		}
 
-		private void ClearKarma(On.KarmaFlower.orig_Consume orig, KarmaFlower self) {
-			foreach (Creature.Grasp grasp in self.grabbedBy) {
-				if (grasp.grabber is Player) {
-					if (lastKarmas.Count > 0)
-						TriggerKarmaAnim(grasp.grabber as Player, Logger);
-					lastKarmas.Clear();
-				}
+		private void ClearKarma(On.KarmaFlower.orig_BitByPlayer orig, KarmaFlower self, Creature.Grasp grasp, bool eu) {
+			orig(self, grasp, eu);
+			if (grasp.grabber is Player && self.BitesLeft == 0) {
+				Logger.LogDebug("Karma flower was consumed, setting the player's karma timer to int.MaxValue...");
+				if (lastKarmas.Count > 0)
+					TriggerKarmaAnim(grasp.grabber as Player, Logger);
+				lastKarmas[grasp.grabber as Player] = int.MaxValue;
 			}
 		}
 
@@ -309,7 +309,7 @@ namespace Vestiges {
 					}
 
 					if (self.room != null && self.room.abstractRoom.name == vestigeSpawnQueue[queueIndex].room) {
-						Vestige newBug = new Vestige(self.room, new Vector2(0, 0), newSpawn.spawn, newSpawn.target, Options.ShouldOverrideColours.Value ? Options.OverridenColour.Value : newSpawn.colour, 2, Options.VestigeLights.Value, false);
+						Vestige newBug = new Vestige(self.room, new Vector2(0, 0), newSpawn.spawn, newSpawn.target, Options.ShouldOverrideColours.Value ? Options.OverridenColour.Value : newSpawn.colour, 2, Options.VestigeLights.Value == PluginOptions.LightSetting.All || (Options.VestigeLights.Value == PluginOptions.LightSetting.KarmaOnly && newSpawn.karma), false);
 
 						if (Options.StealthMode.Value) {
 							newBug.col = new Color(1 - newBug.col.r, 1 - newBug.col.g, 1 - newBug.col.b);

@@ -13,7 +13,7 @@ namespace Vestiges {
 		public readonly Configurable<int> LargeHours;
 		public readonly Configurable<int> Lifespan;
 
-		public readonly Configurable<bool> VestigeLights;
+		public readonly Configurable<LightSetting> VestigeLights;
 		public readonly Configurable<bool> StealthMode;
 		public readonly Configurable<bool> InfiniteLifespan;
 		public readonly Configurable<bool> Karma;
@@ -41,6 +41,12 @@ namespace Vestiges {
 		public OpLabel CurrentStatusLabel;
 		private OpSimpleButton CurrentReloadButton;
 
+		public enum LightSetting {
+			Disabled,
+			KarmaOnly,
+			All
+		}
+
 		public PluginOptions(Plugin pluginInstance, ManualLogSource logSource) {
 			plugin = pluginInstance;
 			Logger = logSource;
@@ -48,7 +54,7 @@ namespace Vestiges {
 			LargeHours = config.Bind("LargeHours", 24, new ConfigAcceptableRange<int>(0, 720));
 			Lifespan = config.Bind("Lifespan", 192, new ConfigAcceptableRange<int>(0, 720));
 
-			VestigeLights = config.Bind("VestigeLights", true);
+			VestigeLights = config.Bind("VestigeLights", LightSetting.KarmaOnly);
 			StealthMode = config.Bind("StealthMode", false);
 			InfiniteLifespan = config.Bind("InfiniteLifespan", false);
 			Karma = config.Bind("Karma", false);
@@ -113,19 +119,19 @@ namespace Vestiges {
 				new OpLabel(385f, 490f, "Vestige Timeout"),
 				new OpUpdown(Lifespan, new Vector2(480f, 490f), 75) { description = "How many hours Vestiges exist for" },
 
-				new OpLabel(10f, 460f, "Vestige Lights"),
-				new OpCheckBox(VestigeLights, 91f, 460f) { description = "Vestiges will produce a small amount of light" },
-				new OpLabel(125f, 460f, "Stealth Mode"),
-				new OpCheckBox(StealthMode, 204f, 460f) { description = "Prevents any new vestiges from being uploaded. They will still appear locally until the cache is reset and the colour will be temporarily inverted on player death." },
-				new OpLabel(238f, 460f, "Remove Timeout"),
-				new OpCheckBox(InfiniteLifespan, 339f, 460f) { description = "Remove Vestige timeout and download historical Vistages from a seperate online backup. This option is disabled by default for a reason, you have been warned!" },
-				new OpLabel(373f, 460f, "Karma Vestiges"),
-				new OpCheckBox(Karma, 462f, 460f) { description = "If a player dies with reinforced karma while holding an additional karma flower, their vesitge will temporarilly grant you reinforced karma" },
+				new OpLabel(10f, 460f, "Stealth Mode"),
+				new OpCheckBox(StealthMode, 89f, 460f) { description = "Prevents any new Vestiges from being uploaded. They will still appear locally until the cache is reset and the colour will be temporarily inverted on player death." },
+				new OpLabel(123f, 460f, "Remove Timeout"),
+				new OpCheckBox(InfiniteLifespan, 224f, 460f) { description = "Remove Vestige timeout and download historical Vistages from a seperate online backup. This option is disabled by default for a reason, you have been warned!" },
+				new OpLabel(258f, 460f, "Karma Vestiges"),
+				new OpCheckBox(Karma, 347f, 460f) { description = "If a player dies with reinforced karma while holding an additional karma flower, their vesitge will temporarilly grant you reinforced karma" },
+				new OpLabel(381f, 460f, "Vestige Lights"),
+				new OpResourceSelector(VestigeLights, new Vector2(462f, 460f), 100f) { description = "Vestiges will produce a small amount of light" },
 
 				new OpLabel(10, 430f, "Override Colours"),
-				new OpCheckBox(ShouldOverrideColours, 108f, 430f) { description = "Replace the colours of all vestiges" },
+				new OpCheckBox(ShouldOverrideColours, 108f, 430f) { description = "Replace the colours of all Vestiges" },
 				new OpLabel(142f, 430f, "Overridden Colour"),
-				new OpColorPicker(OverridenColour, new Vector2(249f, 304f)) { description = "The colour to set all vestiges to" }
+				new OpColorPicker(OverridenColour, new Vector2(249f, 304f)) { description = "The colour to set all Vestiges to" }
 
 			};
 			opTab.AddItems(UIArrPlayerOptions);

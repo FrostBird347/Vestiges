@@ -77,7 +77,7 @@ namespace Vestiges {
 
 						//Only log it once every 5 seconds
 						if (lastKarmaLog < DateTime.Now - TimeSpan.FromSeconds(5))
-							Logger?.LogDebug("Reset karma timer to ~" + Math.Round((Plugin.lastKarmas[player] - player.timeSinceSpawned) / 40f) + " seconds!");
+							Logger?.LogDebug("Karma timer is now at ~" + Math.Round((Plugin.lastKarmas[player] - player.timeSinceSpawned) / 40f) + " seconds!");
 						lastKarmaLog = DateTime.Now;
 
 						if (!saveData.reinforcedKarma) {
