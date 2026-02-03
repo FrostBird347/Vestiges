@@ -134,7 +134,8 @@ namespace Vestiges {
 					Plugin.lastKarmas[player] = DateTime.Now + TimeSpan.FromMinutes(sizeMult * 3.5);
 					//Only log it once every 5 seconds
 					if (lastKarmaLog < DateTime.Now - TimeSpan.FromSeconds(5))
-						Logger?.LogDebug("Reset karma timer to " + (DateTime.Now - Plugin.lastKarmas[player]).TotalMinutes + " minutes!");
+						Logger?.LogDebug("Reset karma timer to " + (Plugin.lastKarmas[player] - DateTime.Now).TotalMinutes + " minutes!");
+					lastKarmaLog = DateTime.Now;
 					if (!saveData.reinforcedKarma) {
 						saveData.reinforcedKarma = true;
 
