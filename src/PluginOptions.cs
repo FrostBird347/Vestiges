@@ -42,7 +42,7 @@ namespace Vestiges {
 			Logger = logSource;
 			VestigeLimit = config.Bind("VestigeLimit", 50, new ConfigAcceptableRange<int>(1, 999999));
 			LargeHours = config.Bind("LargeHours", 24, new ConfigAcceptableRange<int>(0, 720));
-			Lifespan = config.Bind("Lifespan", 96, new ConfigAcceptableRange<int>(0, 720));
+			Lifespan = config.Bind("Lifespan", 192, new ConfigAcceptableRange<int>(0, 720));
 
 			VestigeLights = config.Bind("VestigeLights", true);
 			StealthMode = config.Bind("StealthMode", false);
