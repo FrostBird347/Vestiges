@@ -16,6 +16,8 @@ namespace Vestiges {
 		public readonly Configurable<bool> VestigeLights;
 		public readonly Configurable<bool> StealthMode;
 		public readonly Configurable<bool> InfiniteLifespan;
+		public readonly Configurable<bool> ShouldOverrideColours;
+		public readonly Configurable<Color> OverridenColour;
 
 		public readonly Configurable<string> DownloadID;
 		public readonly Configurable<string> UploadID;
@@ -44,6 +46,8 @@ namespace Vestiges {
 			VestigeLights = config.Bind("VestigeLights", true);
 			StealthMode = config.Bind("StealthMode", false);
 			InfiniteLifespan = config.Bind("InfiniteLifespan", false);
+			ShouldOverrideColours = config.Bind("ShouldOverrideColours", false);
+			OverridenColour = config.Bind("OverridenColour", Color.white, new ConfigurableInfo("Color Config Description", autoTab: "Misc"));
 
 			DownloadID = config.Bind("DownloadID", "1mUk-KQp7Kv4U-ODamQwb7DUWNewvyXLucVu72bVqFZU");
 			UploadID = config.Bind("UploadID", "1FAIpQLSdkBHGRNMbJQGJ0A89CJfDrA98uy1DBL3VQuys9s91i41P1JA");
@@ -86,18 +90,24 @@ namespace Vestiges {
 				new OpLabel(10f, 550f, "Options", true),
 
 				new OpLabel(10f, 490f, "Vestige Limit"),
-				new OpUpdown(VestigeLimit, new Vector2(90f, 490f), 75) { description = "Maximum number of Vestiges that can be placed in a single room" },
-				new OpLabel(180f, 490f, "Large Vestige Timeout"),
-				new OpUpdown(LargeHours, new Vector2(310f, 490f), 75) { description = "How many hours Vestiges will be twice as large for" },
-				new OpLabel(400f, 490f, "Vestige Timeout"),
-				new OpUpdown(Lifespan, new Vector2(500f, 490f), 75) { description = "How many hours Vestiges exist for" },
+				new OpUpdown(VestigeLimit, new Vector2(86f, 490f), 75) { description = "Maximum number of Vestiges that can be placed in a single room" },
+				new OpLabel(171f, 490f, "Large Vestige Timeout"),
+				new OpUpdown(LargeHours, new Vector2(300f, 490f), 75) { description = "How many hours Vestiges will be twice as large for" },
+				new OpLabel(385f, 490f, "Vestige Timeout"),
+				new OpUpdown(Lifespan, new Vector2(480f, 490f), 75) { description = "How many hours Vestiges exist for" },
 
 				new OpLabel(10f, 460f, "Vestige Lights"),
-				new OpCheckBox(VestigeLights, 90f, 460f) { description = "Vestiges will produce a small amount of light" },
-				new OpLabel(130f, 460f, "Stealth Mode"),
-				new OpCheckBox(StealthMode, 210f, 460f) { description = "Prevents any new vestiges from being uploaded. They will still appear locally until the cache is reset." },
-				new OpLabel(250f, 460f, "Remove Timeout"),
-				new OpCheckBox(InfiniteLifespan, 350f, 460f) { description = "Remove Vestige timeout and download historical Vistages from a seperate online backup. This option is disabled by default for a reason, you have been warned!" }
+				new OpCheckBox(VestigeLights, 91f, 460f) { description = "Vestiges will produce a small amount of light" },
+				new OpLabel(125f, 460f, "Stealth Mode"),
+				new OpCheckBox(StealthMode, 204f, 460f) { description = "Prevents any new vestiges from being uploaded. They will still appear locally until the cache is reset." },
+				new OpLabel(238f, 460f, "Remove Timeout"),
+				new OpCheckBox(InfiniteLifespan, 339f, 460f) { description = "Remove Vestige timeout and download historical Vistages from a seperate online backup. This option is disabled by default for a reason, you have been warned!" },
+
+				new OpLabel(10, 430f, "Override Colours"),
+				new OpCheckBox(ShouldOverrideColours, 108f, 430f) { description = "Replace the colours of all vestiges" },
+				new OpLabel(142f, 430f, "Overridden Colour"),
+				new OpColorPicker(OverridenColour, new Vector2(249f, 304f)) { description = "The colour to set all vestiges to" }
+
 			};
 			opTab.AddItems(UIArrPlayerOptions);
 
