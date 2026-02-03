@@ -552,11 +552,13 @@ namespace Vestiges {
 			}
 		}
 
-		public void OnReloadButton(UIfocusable trigger) {
-			trigger.greyedOut = true;
+		public void OnReloadButton(UIfocusable button) {
+			button.greyedOut = true;
 			ClearVestiges();
 			DownloadVestiges(true);
+			//This should never be called when the label isn't null, but just to be safe we check regardless
+			if (Options.CurrentStatusLabel != null)
+				Options.CurrentStatusLabel.text = "Cleared and redownloading vestiges...\nThis text will only update after exiting back to the main menu!";
 		}
-
 	}
 }

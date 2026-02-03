@@ -38,6 +38,7 @@ namespace Vestiges {
 
 		private UIelement[] UIArrPlayerOptions;
 		private UIelement[] UIArrPlayerOptionsTwo;
+		public OpLabel CurrentStatusLabel;
 
 		public PluginOptions(Plugin pluginInstance, ManualLogSource logSource) {
 			plugin = pluginInstance;
@@ -69,6 +70,7 @@ namespace Vestiges {
 
 			ArchiveURL = config.Bind("ArchiveURL", "https://raw.githubusercontent.com/FrostBird347/VestigeBackup/master/VestigeBackup.csv");
 
+			CurrentStatusLabel = null;
 		}
 
 		public override void Initialize() {
@@ -76,11 +78,11 @@ namespace Vestiges {
 				description = "Clear and redownload all Vestiges",
 				greyedOut = Plugin.isDownloading
 			};
-			RefreshVestiges.OnClick += plugin.OnReloadButton;			
+			RefreshVestiges.OnClick += plugin.OnReloadButton;
 
-			OpLabel VestigeStatus = new OpLabel(150F, 490f, "Failed to download Vestiges!");
-			if (Plugin.isDownloading) VestigeStatus.text = "Vestiges are still downloading...";
-			if (Plugin.isDownloaded) VestigeStatus.text = "Vestiges have been downloaded (" + Plugin.vestigeCount + " loaded)";
+			CurrentStatusLabel = new OpLabel(150F, 490f, "Failed to download Vestiges!");
+			if (Plugin.isDownloading) CurrentStatusLabel.text = "Vestiges are still downloading...";
+			if (Plugin.isDownloaded) CurrentStatusLabel.text = "Vestiges have been downloaded (" + Plugin.vestigeCount + " loaded)";
 
 			OpTab opTab = new OpTab(this, "Options");
 			OpTab opTabTwo = new OpTab(this, "Upload/Download Settings");
@@ -108,7 +110,7 @@ namespace Vestiges {
 				new OpLabel(238f, 460f, "Remove Timeout"),
 				new OpCheckBox(InfiniteLifespan, 339f, 460f) { description = "Remove Vestige timeout and download historical Vistages from a seperate online backup. This option is disabled by default for a reason, you have been warned!" },
 				new OpLabel(373f, 460f, "Karma Vestiges"),
-				new OpCheckBox(Karma, 474f, 460f) { description = "If you enable this, vestiges who's player who died with reinforced karma while holding an additional karma flower will temporarilly grant you reinforced karma" },
+				new OpCheckBox(Karma, 462f, 460f) { description = "If a player dies with reinforced karma while holding an additional karma flower, their vesitge will temporarilly grant you reinforced karma" },
 
 				new OpLabel(10, 430f, "Override Colours"),
 				new OpCheckBox(ShouldOverrideColours, 108f, 430f) { description = "Replace the colours of all vestiges" },
@@ -124,7 +126,7 @@ namespace Vestiges {
 				new OpLabel(290f, 550f, "(Only change these if you know what you are doing!)"),
 
 				RefreshVestiges,
-				VestigeStatus,
+				CurrentStatusLabel,
 
 				new OpLabel(10f, 430f, "Download ID"),
 				new OpTextBox(DownloadID, new Vector2(200f,430f), 400f) { description = "" },

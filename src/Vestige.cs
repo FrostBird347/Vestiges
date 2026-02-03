@@ -19,6 +19,7 @@ namespace Vestiges {
 		public bool exists;
 		public bool karma;
 		private BepInEx.Logging.ManualLogSource Logger;
+		private DateTime lastKarmaLog;
 
 		public void SetupLogger(BepInEx.Logging.ManualLogSource newLogger) {
 			Logger = newLogger;
@@ -42,8 +43,9 @@ namespace Vestiges {
 			targetSwitchMult = 1f;
 			exists = true;
 			room = _room;
-			Logger = null;
 			karma = _karma;
+			Logger = null;
+			lastKarmaLog = DateTime.MinValue;
 		}
 
 		public override void Reset(Vector2 resetPos) {
@@ -128,8 +130,11 @@ namespace Vestiges {
 			foreach (Player player in room.PlayersInRoom) {
 				if (!player.dead && (player.IsJollyPlayer || !player.isSlugpup) && !player.inShortcut && Vector2.Distance(pos, player.mainBodyChunk.pos) < 50f && player.room.game.session is StoryGameSession) {
 					DeathPersistentSaveData saveData = (player.room.game.session as StoryGameSession).saveState.deathPersistentSaveData;
+					
 					Plugin.lastKarmas[player] = DateTime.Now + TimeSpan.FromMinutes(sizeMult * 3.5);
-					Logger?.LogDebug("Reset karma timer to " + (DateTime.Now - Plugin.lastKarmas[player]).TotalMinutes + " minutes!");
+					//Only log it once every 5 seconds
+					if (lastKarmaLog < DateTime.Now - TimeSpan.FromSeconds(5))
+						Logger?.LogDebug("Reset karma timer to " + (DateTime.Now - Plugin.lastKarmas[player]).TotalMinutes + " minutes!");
 					if (!saveData.reinforcedKarma) {
 						saveData.reinforcedKarma = true;
 
