@@ -16,6 +16,7 @@ namespace Vestiges {
 		public readonly Configurable<bool> VestigeLights;
 		public readonly Configurable<bool> StealthMode;
 		public readonly Configurable<bool> InfiniteLifespan;
+		public readonly Configurable<bool> Karma;
 		public readonly Configurable<bool> ShouldOverrideColours;
 		public readonly Configurable<Color> OverridenColour;
 
@@ -31,6 +32,7 @@ namespace Vestiges {
 		public readonly Configurable<string> EntryG;
 		public readonly Configurable<string> EntryH;
 		public readonly Configurable<string> EntryI;
+		public readonly Configurable<string> EntryJ;
 
 		public readonly Configurable<string> ArchiveURL;
 
@@ -47,6 +49,7 @@ namespace Vestiges {
 			VestigeLights = config.Bind("VestigeLights", true);
 			StealthMode = config.Bind("StealthMode", false);
 			InfiniteLifespan = config.Bind("InfiniteLifespan", false);
+			Karma = config.Bind("Karma", false);
 			ShouldOverrideColours = config.Bind("ShouldOverrideColours", false);
 			OverridenColour = config.Bind("OverridenColour", Color.white, new ConfigurableInfo("Color Config Description", autoTab: "Misc"));
 
@@ -62,14 +65,14 @@ namespace Vestiges {
 			EntryG = config.Bind("EntryG", "622593087");
 			EntryH = config.Bind("EntryH", "1964557942");
 			EntryI = config.Bind("EntryI", "787154321");
+			EntryJ = config.Bind("EntryJ", "595396580");
 
 			ArchiveURL = config.Bind("ArchiveURL", "https://raw.githubusercontent.com/FrostBird347/VestigeBackup/master/VestigeBackup.csv");
 
 		}
 
 		public override void Initialize() {
-			OpSimpleButton RefreshVestiges = new OpSimpleButton(new Vector2(10f, 490f), new Vector2(125f, 10f), "Reload Vestiges")
-			{
+			OpSimpleButton RefreshVestiges = new OpSimpleButton(new Vector2(10f, 490f), new Vector2(125f, 10f), "Reload Vestiges") {
 				description = "Clear and redownload all Vestiges",
 				greyedOut = Plugin.isDownloading
 			};
@@ -104,6 +107,8 @@ namespace Vestiges {
 				new OpCheckBox(StealthMode, 204f, 460f) { description = "Prevents any new vestiges from being uploaded. They will still appear locally until the cache is reset and the colour will be temporarily inverted on player death." },
 				new OpLabel(238f, 460f, "Remove Timeout"),
 				new OpCheckBox(InfiniteLifespan, 339f, 460f) { description = "Remove Vestige timeout and download historical Vistages from a seperate online backup. This option is disabled by default for a reason, you have been warned!" },
+				new OpLabel(373f, 460f, "Karma Vestiges"),
+				new OpCheckBox(Karma, 474f, 460f) { description = "If you enable this, vestiges who's player who died with reinforced karma while holding an additional karma flower will temporarilly grant you reinforced karma" },
 
 				new OpLabel(10, 430f, "Override Colours"),
 				new OpCheckBox(ShouldOverrideColours, 108f, 430f) { description = "Replace the colours of all vestiges" },
@@ -143,11 +148,13 @@ namespace Vestiges {
 				new OpTextBox(EntryH, new Vector2(200f,160f), 400f) { description = "Target X" },
 				new OpLabel(10f, 130f, "entry9 ID"),
 				new OpTextBox(EntryI, new Vector2(200f,130f), 400f) { description = "Target Y" },
+				new OpLabel(10f, 100f, "entry10 ID"),
+				new OpTextBox(EntryJ, new Vector2(200f,100f), 400f) { description = "Karma" },
 
-				new OpLabel(10f, 100f, "Archive URL"),
+				new OpLabel(10f, 70f, "Archive URL"),
 				//Unfortunately the size of the text box determines the string's size limit, so to work around that issue it's set to be ridiculously large
 				//There probably is some other form of input for long text... but I don't really have the time to figure that out right now
-				new OpTextBox(ArchiveURL, new Vector2(200f, 100f), 4000f) { description = "Where historical Vestiges are downloaded" }
+				new OpTextBox(ArchiveURL, new Vector2(200f, 70f), 4000f) { description = "Where historical Vestiges are downloaded" }
 			};
 			opTabTwo.AddItems(UIArrPlayerOptionsTwo);
 		}

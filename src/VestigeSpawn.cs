@@ -9,14 +9,16 @@ namespace Vestiges {
 		public VestigeCoord spawn;
 		public VestigeCoord target;
 		public DateTime time;
+		public bool karma;
 
-		public VestigeSpawn(string _room, string _region, Color _colour, VestigeCoord _spawn, VestigeCoord _target, DateTime _time) {
+		public VestigeSpawn(string _room, string _region, Color _colour, VestigeCoord _spawn, VestigeCoord _target, DateTime _time, bool _karma) {
 			room = _room;
 			region = _region;
 			colour = _colour;
 			spawn = _spawn;
 			target = _target;
 			time = _time;
+			karma = _karma;
 		}
 	}
 }

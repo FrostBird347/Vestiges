@@ -9,6 +9,8 @@ using System.Net.Http;
 using System.Globalization;
 using System.Threading.Tasks;
 using Menu.Remix.MixedUI;
+using System.Linq;
+using IL.Watcher;
 
 // Allows access to private members
 #pragma warning disable CS0618
@@ -39,6 +41,7 @@ namespace Vestiges {
 		List<VestigeSpawnQueue> vestigeSpawnQueue;
 		int vestigeUploadLimiter;
 		List<WorldCoordinate> lastVestigeSpawns;
+		public static Dictionary<Player, DateTime> lastKarmas;
 		private DateTime lastDev;
 
 		bool isStory;
@@ -59,6 +62,7 @@ namespace Vestiges {
 			On.Player.Die += OnDeath;
 			On.Player.Grabbed += OnGrabDeath;
 			On.RainWorldGame.ctor += StartCycle;
+			On.KarmaFlower.Consume += ClearKarma;
 		}
 
 		private void Init(On.RainWorld.orig_OnModsInit orig, RainWorld self) {
@@ -81,6 +85,7 @@ namespace Vestiges {
 				vestigeSpawnQueue = new List<VestigeSpawnQueue>();
 				vestigeUploadLimiter = 150;
 				lastVestigeSpawns = new List<WorldCoordinate>();
+				lastKarmas = new Dictionary<Player, DateTime>();
 				lastDev = DateTime.Now.AddYears(-1);
 
 				isStory = false;
@@ -148,9 +153,10 @@ namespace Vestiges {
 							currentSize = 2;
 						}
 
-						Vestige newBug = new Vestige(newRoom, new Vector2(0, 0), spawnInfo.spawn, spawnInfo.target, Options.ShouldOverrideColours.Value ? Options.OverridenColour.Value : spawnInfo.colour, currentSize, Options.VestigeLights.Value);
+						Vestige newBug = new Vestige(newRoom, new Vector2(0, 0), spawnInfo.spawn, spawnInfo.target, Options.ShouldOverrideColours.Value ? Options.OverridenColour.Value : spawnInfo.colour, currentSize, Options.VestigeLights.Value, Options.Karma.Value && spawnInfo.karma);
 						newRoom.AddObject(newBug);
 						activeVestigeList.Add(newBug);
+						newBug.SetupLogger(Logger);
 					}
 				}
 				if (!self.dead) {
@@ -162,7 +168,8 @@ namespace Vestiges {
 								currentSize = 2;
 							}
 
-							Vestige newBug = new Vestige(newRoom, new Vector2(0, 0), localvestigeData[i].spawn, localvestigeData[i].target, Options.ShouldOverrideColours.Value ? Options.OverridenColour.Value : localvestigeData[i].colour, currentSize, Options.VestigeLights.Value);
+							//Always set karma to false for local vestiges
+							Vestige newBug = new Vestige(newRoom, new Vector2(0, 0), localvestigeData[i].spawn, localvestigeData[i].target, Options.ShouldOverrideColours.Value ? Options.OverridenColour.Value : localvestigeData[i].colour, currentSize, Options.VestigeLights.Value, false);
 							newRoom.AddObject(newBug);
 							activeVestigeList.Add(newBug);
 						}
@@ -197,6 +204,38 @@ namespace Vestiges {
 					backupTargets.Remove(self.playerState.playerNumber);
 					backupTargets.Add(self.playerState.playerNumber, self.coord);
 				}
+
+				if (!self.dead && lastKarmas.ContainsKey(self) && lastKarmas[self] < DateTime.Now && self.room.game.session is StoryGameSession) {
+					lastKarmas.Remove(self);
+					Logger.LogDebug("There are now " + lastKarmas.Count + " slugcats with temporary karma!");
+					if (lastKarmas.Count == 0) {
+						DeathPersistentSaveData saveData = (self.room.game.session as StoryGameSession).saveState.deathPersistentSaveData;
+						saveData.reinforcedKarma = false;
+					
+						TriggerKarmaAnim(self, Logger);
+					}
+				}
+			}
+		}
+
+		private void ClearKarma(On.KarmaFlower.orig_Consume orig, KarmaFlower self) {
+			foreach (Creature.Grasp grasp in self.grabbedBy) {
+				if (grasp.grabber is Player) {
+					if (lastKarmas.Count > 0)
+						TriggerKarmaAnim(grasp.grabber as Player, Logger);
+					lastKarmas.Clear();
+				}
+			}
+		}
+
+		public static void TriggerKarmaAnim(Player player, BepInEx.Logging.ManualLogSource Logger = null) {
+			Logger?.LogDebug("Karma animation triggered.");
+			for (int i = 0; i < player.room.game.cameras.Length; i++) {
+					RoomCamera cam = player.room.game.cameras[i];
+					if (cam.hud != null) {
+						if (cam.followAbstractCreature == player.abstractCreature || ModManager.CoopAvailable)
+							cam.hud.karmaMeter.reinforceAnimation = 0;
+					}
 			}
 		}
 
@@ -225,7 +264,13 @@ namespace Vestiges {
 					safePos = backupTargets[self.playerState.playerNumber];
 				}
 
-				VestigeSpawnQueue newSpawn = new VestigeSpawnQueue(self.coord, safePos, self.ShortCutColor());
+				bool karma = false;
+				if (self.KarmaIsReinforced) {
+					foreach (Creature.Grasp grasp in self.grasps) {
+						if (grasp?.grabbed is KarmaFlower) karma = true;
+					}
+				}
+				VestigeSpawnQueue newSpawn = new VestigeSpawnQueue(self.coord, safePos, self.ShortCutColor(),  karma);
 				vestigeSpawnQueue.Add(newSpawn);
 
 				if (self.room != null) {
@@ -245,8 +290,7 @@ namespace Vestiges {
 
 				if (!lastVestigeSpawns.Contains(vestigeSpawnQueue[queueIndex].safeCoord)) {
 
-
-					VestigeSpawn newSpawn = new VestigeSpawn(vestigeSpawnQueue[queueIndex].room, vestigeSpawnQueue[queueIndex].region, vestigeSpawnQueue[queueIndex].colour, new VestigeCoord(vestigeSpawnQueue[queueIndex].coord), new VestigeCoord(vestigeSpawnQueue[queueIndex].safeCoord), DateTime.UtcNow); ;
+					VestigeSpawn newSpawn = new VestigeSpawn(vestigeSpawnQueue[queueIndex].room, vestigeSpawnQueue[queueIndex].region, vestigeSpawnQueue[queueIndex].colour, new VestigeCoord(vestigeSpawnQueue[queueIndex].coord), new VestigeCoord(vestigeSpawnQueue[queueIndex].safeCoord), DateTime.UtcNow, vestigeSpawnQueue[queueIndex].karma); ;
 					localvestigeData.Add(newSpawn);
 
 					lastVestigeSpawns.Add(vestigeSpawnQueue[queueIndex].safeCoord);
@@ -265,7 +309,7 @@ namespace Vestiges {
 					}
 
 					if (self.room != null && self.room.abstractRoom.name == vestigeSpawnQueue[queueIndex].room) {
-						Vestige newBug = new Vestige(self.room, new Vector2(0, 0), newSpawn.spawn, newSpawn.target, Options.ShouldOverrideColours.Value ? Options.OverridenColour.Value : newSpawn.colour, 2, Options.VestigeLights.Value);
+						Vestige newBug = new Vestige(self.room, new Vector2(0, 0), newSpawn.spawn, newSpawn.target, Options.ShouldOverrideColours.Value ? Options.OverridenColour.Value : newSpawn.colour, 2, Options.VestigeLights.Value, false);
 
 						if (Options.StealthMode.Value) {
 							newBug.col = new Color(1 - newBug.col.r, 1 - newBug.col.g, 1 - newBug.col.b);
@@ -287,6 +331,7 @@ namespace Vestiges {
 			orig(self, manager);
 
 			activeRooms.Clear();
+			lastKarmas.Clear();
 			if (lastLifespan != Options.Lifespan.Value || lastInfiniteLifespan != Options.InfiniteLifespan.Value) {
 				Logger.LogDebug("Vestige lifespan has changed, clearing and redownloading Vestiges...");
 				ClearVestiges();
@@ -320,7 +365,7 @@ namespace Vestiges {
 		}
 
 		private void UploadVestige(VestigeSpawn newVest) {
-			Logger.LogDebug("Attempting to upload Vestige... [" + newVest.room + ":" + newVest.region + ":(" + newVest.colour.r.ToString() + "," + newVest.colour.g.ToString() + "," + newVest.colour.b.ToString() + "):(" + newVest.spawn.x.ToString() + "," + newVest.spawn.y.ToString() + "):(" + newVest.target.x.ToString() + "," + newVest.target.y.ToString() + ")]");
+			Logger.LogDebug("Attempting to upload Vestige... [" + newVest.room + ":" + newVest.region + ":(" + newVest.colour.r.ToString() + "," + newVest.colour.g.ToString() + "," + newVest.colour.b.ToString() + "):(" + newVest.spawn.x.ToString() + "," + newVest.spawn.y.ToString() + "):(" + newVest.target.x.ToString() + "," + newVest.target.y.ToString() + ")" + (newVest.karma ? ":K" : "") + "]");
 
 			Dictionary<string, string> encodedSpawnData = new Dictionary<string, string>
 			{
@@ -332,7 +377,8 @@ namespace Vestiges {
 				{ "entry." + Options.EntryF.Value, newVest.spawn.x.ToString() },
 				{ "entry." + Options.EntryG.Value, newVest.spawn.y.ToString() },
 				{ "entry." + Options.EntryH.Value, newVest.target.x.ToString() },
-				{ "entry." + Options.EntryI.Value, newVest.target.y.ToString() }
+				{ "entry." + Options.EntryI.Value, newVest.target.y.ToString() },
+				{ "entry." + Options.EntryJ.Value, newVest.karma ? "Y" : "" }
 			};
 
 			httpClient.PostAsync("https://docs.google.com/forms/u/0/d/e/" + Options.UploadID.Value + "/formResponse", new FormUrlEncodedContent(encodedSpawnData));
@@ -430,12 +476,12 @@ namespace Vestiges {
 					Logger.LogDebug("Processed " + ((float)(r * 100) / rawRows.Length) + "%");
 				}
 
-				//[Timestamp, room, region, colour.r, colour.g, colour.b, spawn.x, spawn.y, target.x, target.y]
-				//[0        , 1   , 2     , 3       , 4       , 5       , 6      , 7      , 8       , 9       ]
+				//[Timestamp, room, region, colour.r, colour.g, colour.b, spawn.x, spawn.y, target.x, target.y, karma]
+				//[0        , 1   , 2     , 3       , 4       , 5       , 6      , 7      , 8       , 9       , 10   ]
 				string[] currentValues = rawRows[r].Trim('\r').Split(',');
-				if (currentValues == new string[] { "", "", "", "", "", "", "", "", "", "" }) {
+				if (rawRows[r].Trim('\r', ',', ' ') == "") {
 					totalEntries--;
-				} else if (currentValues.Length >= 10) {
+				} else if (currentValues.Length >= 11) {
 					validEntries++;
 
 					if (!vestigeData.ContainsKey(currentValues[2])) {
@@ -452,7 +498,7 @@ namespace Vestiges {
 
 					if (!rawDownloads.Contains(rawRows[r].Trim('\r'))) {
 
-						VestigeSpawn currentVestige = new VestigeSpawn(currentValues[2], currentValues[1], currentColor, currentSpawn, currentTarget, currentTimestamp);
+						VestigeSpawn currentVestige = new VestigeSpawn(currentValues[2], currentValues[1], currentColor, currentSpawn, currentTarget, currentTimestamp, currentValues[10] == "Y");
 
 						if (Options.InfiniteLifespan.Value || (DateTime.UtcNow - currentVestige.time).TotalHours <= Options.Lifespan.Value) {
 							vestigeData[currentValues[2]][currentValues[1]].Add(currentVestige);
@@ -506,8 +552,7 @@ namespace Vestiges {
 			}
 		}
 
-		public void OnReloadButton(UIfocusable trigger)
-		{
+		public void OnReloadButton(UIfocusable trigger) {
 			trigger.greyedOut = true;
 			ClearVestiges();
 			DownloadVestiges(true);

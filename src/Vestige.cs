@@ -17,13 +17,14 @@ namespace Vestiges {
 		public bool noTarget;
 		public float targetSwitchMult;
 		public bool exists;
-		BepInEx.Logging.ManualLogSource Logger;
+		public bool karma;
+		private BepInEx.Logging.ManualLogSource Logger;
 
 		public void SetupLogger(BepInEx.Logging.ManualLogSource newLogger) {
 			Logger = newLogger;
 		}
 
-		public Vestige(Room _room, Vector2 _nullpos, VestigeCoord _pos, VestigeCoord _targt, Color _colour, int _size, bool _lightEnabled) : base(_room, _nullpos, PluginEnums.Vestige) {
+		public Vestige(Room _room, Vector2 _nullpos, VestigeCoord _pos, VestigeCoord _targt, Color _colour, int _size, bool _lightEnabled, bool _karma) : base(_room, _nullpos, PluginEnums.Vestige) {
 
 			lastLastPos = _room.MiddleOfTile(_pos.x, _pos.y);
 			pos = _room.MiddleOfTile(_pos.x, _pos.y);
@@ -42,6 +43,7 @@ namespace Vestiges {
 			exists = true;
 			room = _room;
 			Logger = null;
+			karma = _karma;
 		}
 
 		public override void Reset(Vector2 resetPos) {
@@ -100,8 +102,7 @@ namespace Vestiges {
 
 			if (room.Darkness(pos) > 0f && lightEnabled) {
 				if (light == null) {
-					light = new LightSource(pos, false, col, this)
-					{
+					light = new LightSource(pos, false, col, this) {
 						noGameplayImpact = ModManager.MMF
 					};
 					room.AddObject(light);
@@ -121,6 +122,21 @@ namespace Vestiges {
 				exists = false;
 				Plugin.activeRooms.Remove(room);
 				Destroy();
+				return;
+			}
+
+			foreach (Player player in room.PlayersInRoom) {
+				if (!player.dead && (player.IsJollyPlayer || !player.isSlugpup) && !player.inShortcut && Vector2.Distance(pos, player.mainBodyChunk.pos) < 50f && player.room.game.session is StoryGameSession) {
+					DeathPersistentSaveData saveData = (player.room.game.session as StoryGameSession).saveState.deathPersistentSaveData;
+					Plugin.lastKarmas[player] = DateTime.Now + TimeSpan.FromMinutes(sizeMult * 3.5);
+					Logger?.LogDebug("Reset karma timer to " + (DateTime.Now - Plugin.lastKarmas[player]).TotalMinutes + " minutes!");
+					if (!saveData.reinforcedKarma) {
+						saveData.reinforcedKarma = true;
+
+						Plugin.TriggerKarmaAnim(player, Logger);
+						Logger?.LogDebug("There are now " + Plugin.lastKarmas.Count + " slugcats with temporary karma!");
+					}
+				}
 			}
 		}
 
@@ -134,8 +150,7 @@ namespace Vestiges {
 		public override void InitiateSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam) {
 			sLeaser.sprites = new FSprite[1];
 
-			sLeaser.sprites[0] = new FSprite("pixel", true)
-			{
+			sLeaser.sprites[0] = new FSprite("pixel", true) {
 				scaleX = 2f * sizeMult,
 				anchorY = 0f,
 				color = col
