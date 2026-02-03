@@ -20,7 +20,7 @@ namespace Vestiges {
 		public bool karma;
 		private BepInEx.Logging.ManualLogSource Logger;
 		private DateTime lastKarmaLog;
-
+		
 		public void SetupLogger(BepInEx.Logging.ManualLogSource newLogger) {
 			Logger = newLogger;
 		}
@@ -70,13 +70,14 @@ namespace Vestiges {
 					if (!player.dead && (player.IsJollyPlayer || !player.isSlugpup) && player.room == room && !player.inShortcut && Vector2.Distance(pos, player.mainBodyChunk.pos) < 50f && player.room.game.session is StoryGameSession) {
 						DeathPersistentSaveData saveData = (player.room.game.session as StoryGameSession).saveState.deathPersistentSaveData;
 
-						DateTime newTime = DateTime.Now + TimeSpan.FromMinutes(sizeMult * 3.5);
+						//Should be 40 ticks per second at normal speed, I don't know of any better way to keep track of the time while also taking the pause screen into account
+						int newTime = player.timeSinceSpawned + (int)Math.Round(sizeMult * 3.5 * 60 * 40);
 						if (!Plugin.lastKarmas.ContainsKey(player) || newTime > Plugin.lastKarmas[player])
 							Plugin.lastKarmas[player] = newTime;
 
 						//Only log it once every 5 seconds
 						if (lastKarmaLog < DateTime.Now - TimeSpan.FromSeconds(5))
-							Logger?.LogDebug("Reset karma timer to " + Math.Round((Plugin.lastKarmas[player] - DateTime.Now).TotalSeconds) + " seconds!");
+							Logger?.LogDebug("Reset karma timer to ~" + Math.Round((Plugin.lastKarmas[player] - player.timeSinceSpawned) / 40f) + " seconds!");
 						lastKarmaLog = DateTime.Now;
 
 						if (!saveData.reinforcedKarma) {

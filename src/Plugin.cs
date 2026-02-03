@@ -41,7 +41,7 @@ namespace Vestiges {
 		List<VestigeSpawnQueue> vestigeSpawnQueue;
 		int vestigeUploadLimiter;
 		List<WorldCoordinate> lastVestigeSpawns;
-		public static Dictionary<Player, DateTime> lastKarmas;
+		public static Dictionary<Player, int> lastKarmas;
 		private DateTime lastDev;
 
 		bool isStory;
@@ -85,7 +85,7 @@ namespace Vestiges {
 				vestigeSpawnQueue = new List<VestigeSpawnQueue>();
 				vestigeUploadLimiter = 150;
 				lastVestigeSpawns = new List<WorldCoordinate>();
-				lastKarmas = new Dictionary<Player, DateTime>();
+				lastKarmas = new Dictionary<Player, int>();
 				lastDev = DateTime.Now.AddYears(-1);
 
 				isStory = false;
@@ -205,7 +205,7 @@ namespace Vestiges {
 					backupTargets.Add(self.playerState.playerNumber, self.coord);
 				}
 
-				if (!self.dead && lastKarmas.ContainsKey(self) && lastKarmas[self] < DateTime.Now && self.room.game.session is StoryGameSession) {
+				if (!self.dead && lastKarmas.ContainsKey(self) && lastKarmas[self] < self.room.game.clock && self.room.game.session is StoryGameSession) {
 					lastKarmas.Remove(self);
 					Logger.LogDebug("There are now " + lastKarmas.Count + " slugcats with temporary karma!");
 					if (lastKarmas.Count == 0) {
