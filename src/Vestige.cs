@@ -64,6 +64,31 @@ namespace Vestiges {
 				Destroy();
 				return;
 			}
+
+			if (karma) {
+				foreach (Player player in room.PlayersInRoom) {
+					if (!player.dead && (player.IsJollyPlayer || !player.isSlugpup) && player.room == room && !player.inShortcut && Vector2.Distance(pos, player.mainBodyChunk.pos) < 50f && player.room.game.session is StoryGameSession) {
+						DeathPersistentSaveData saveData = (player.room.game.session as StoryGameSession).saveState.deathPersistentSaveData;
+
+						DateTime newTime = DateTime.Now + TimeSpan.FromMinutes(sizeMult * 3.5);
+						if (!Plugin.lastKarmas.ContainsKey(player) || newTime > Plugin.lastKarmas[player])
+							Plugin.lastKarmas[player] = newTime;
+
+						//Only log it once every 5 seconds
+						if (lastKarmaLog < DateTime.Now - TimeSpan.FromSeconds(5))
+							Logger?.LogDebug("Reset karma timer to " + Math.Round((Plugin.lastKarmas[player] - DateTime.Now).TotalSeconds) + " seconds!");
+						lastKarmaLog = DateTime.Now;
+
+						if (!saveData.reinforcedKarma) {
+							saveData.reinforcedKarma = true;
+
+							Plugin.TriggerKarmaAnim(player, Logger);
+							Logger?.LogDebug("There are now " + Plugin.lastKarmas.Count + " slugcats with temporary karma!");
+						}
+					}
+				}
+			}
+
 			vel *= 0.95f;
 			vel.x += dir.x * 0.3f;
 			vel.y += dir.y * 0.3f;
@@ -124,25 +149,6 @@ namespace Vestiges {
 				exists = false;
 				Plugin.activeRooms.Remove(room);
 				Destroy();
-				return;
-			}
-
-			foreach (Player player in room.PlayersInRoom) {
-				if (!player.dead && (player.IsJollyPlayer || !player.isSlugpup) && !player.inShortcut && Vector2.Distance(pos, player.mainBodyChunk.pos) < 50f && player.room.game.session is StoryGameSession) {
-					DeathPersistentSaveData saveData = (player.room.game.session as StoryGameSession).saveState.deathPersistentSaveData;
-					
-					Plugin.lastKarmas[player] = DateTime.Now + TimeSpan.FromMinutes(sizeMult * 3.5);
-					//Only log it once every 5 seconds
-					if (lastKarmaLog < DateTime.Now - TimeSpan.FromSeconds(5))
-						Logger?.LogDebug("Reset karma timer to " + (Plugin.lastKarmas[player] - DateTime.Now).TotalMinutes + " minutes!");
-					lastKarmaLog = DateTime.Now;
-					if (!saveData.reinforcedKarma) {
-						saveData.reinforcedKarma = true;
-
-						Plugin.TriggerKarmaAnim(player, Logger);
-						Logger?.LogDebug("There are now " + Plugin.lastKarmas.Count + " slugcats with temporary karma!");
-					}
-				}
 			}
 		}
 
