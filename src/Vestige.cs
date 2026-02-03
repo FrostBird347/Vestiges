@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using RWCustom;
 using UnityEngine;
-using UnityEngine.Scripting;
-using Unity.Mathematics;
 using Random = UnityEngine.Random;
 
 //Modified version of the vanilla fireflies
@@ -66,8 +61,8 @@ namespace Vestiges {
 				return;
 			}
 			vel *= 0.95f;
-			vel.x = vel.x + dir.x * 0.3f;
-			vel.y = vel.y + dir.y * 0.3f;
+			vel.x += dir.x * 0.3f;
+			vel.y += dir.y * 0.3f;
 
 			if (Random.value > 0.95f * targetSwitchMult && !noTarget) {
 				noTarget = true;
@@ -105,15 +100,17 @@ namespace Vestiges {
 
 			if (room.Darkness(pos) > 0f && lightEnabled) {
 				if (light == null) {
-					light = new LightSource(pos, false, col, this);
-					light.noGameplayImpact = ModManager.MMF;
+					light = new LightSource(pos, false, col, this)
+					{
+						noGameplayImpact = ModManager.MMF
+					};
 					room.AddObject(light);
 				}
 				light.setPos = new Vector2?(pos);
 				light.setAlpha = new float?(0.15f - 0.1f * Mathf.Sin(sin * 3.14159274f * 2f)) * sizeMult;
 				light.setRad = new float?(60f + 20f * Mathf.Sin(sin * 3.14159274f * 2f)) * sizeMult;
-			} else if (light != null) {
-				light.Destroy();
+			} else {
+				light?.Destroy();
 				light = null;
 			}
 
@@ -131,25 +128,27 @@ namespace Vestiges {
 			if (!room.readyForAI || !room.IsPositionInsideBoundries(tile)) {
 				return 0f;
 			}
-			return Random.value / (float)Math.Abs(room.aimap.getAItile(tile).floorAltitude - 4) / (float)Math.Abs(room.aimap.getTerrainProximity(tile) - 4);
+			return Random.value / Math.Abs(room.aimap.getAItile(tile).floorAltitude - 4) / Math.Abs(room.aimap.getTerrainProximity(tile) - 4);
 		}
 
 		public override void InitiateSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam) {
 			sLeaser.sprites = new FSprite[1];
 
-			sLeaser.sprites[0] = new FSprite("pixel", true);
-			sLeaser.sprites[0].scaleX = 2f * sizeMult;
-			sLeaser.sprites[0].anchorY = 0f;
-			sLeaser.sprites[0].color = this.col;
+			sLeaser.sprites[0] = new FSprite("pixel", true)
+			{
+				scaleX = 2f * sizeMult,
+				anchorY = 0f,
+				color = col
+			};
 
-			this.AddToContainer(sLeaser, rCam, null);
+			AddToContainer(sLeaser, rCam, null);
 		}
 
 		public override void DrawSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, float timeStacker, Vector2 camPos) {
-			sLeaser.sprites[0].x = Mathf.Lerp(this.lastPos.x, this.pos.x, timeStacker) - camPos.x;
-			sLeaser.sprites[0].y = Mathf.Lerp(this.lastPos.y, this.pos.y, timeStacker) - camPos.y;
-			sLeaser.sprites[0].rotation = Custom.AimFromOneVectorToAnother(Vector2.Lerp(this.lastLastPos, this.lastPos, timeStacker), Vector2.Lerp(this.lastPos, this.pos, timeStacker));
-			sLeaser.sprites[0].scaleY = Mathf.Max(2f * sizeMult, (2f * sizeMult) + 0.55f * Vector2.Distance(Vector2.Lerp(this.lastLastPos, this.lastPos, timeStacker), Vector2.Lerp(this.lastPos, this.pos, timeStacker)));
+			sLeaser.sprites[0].x = Mathf.Lerp(lastPos.x, pos.x, timeStacker) - camPos.x;
+			sLeaser.sprites[0].y = Mathf.Lerp(lastPos.y, pos.y, timeStacker) - camPos.y;
+			sLeaser.sprites[0].rotation = Custom.AimFromOneVectorToAnother(Vector2.Lerp(lastLastPos, lastPos, timeStacker), Vector2.Lerp(lastPos, pos, timeStacker));
+			sLeaser.sprites[0].scaleY = Mathf.Max(2f * sizeMult, (2f * sizeMult) + 0.55f * Vector2.Distance(Vector2.Lerp(lastLastPos, lastPos, timeStacker), Vector2.Lerp(lastPos, pos, timeStacker)));
 			base.DrawSprites(sLeaser, rCam, timeStacker, camPos);
 		}
 

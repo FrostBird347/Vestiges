@@ -1,5 +1,4 @@
-﻿using System;
-namespace Vestiges {
+﻿namespace Vestiges {
 	public struct VestigeCoord {
 		public int x;
 		public int y;
@@ -8,7 +7,6 @@ namespace Vestiges {
 			x = _x;
 			y = _y;
 		}
-
 
 		public VestigeCoord(WorldCoordinate wCoord) {
 			x = wCoord.x;

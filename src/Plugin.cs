@@ -1,18 +1,14 @@
 ﻿using BepInEx;
 using System.Security.Permissions;
 using System;
-using System.Numerics;
 using UnityEngine;
 using Vector2 = UnityEngine.Vector2;
 using Random = UnityEngine.Random;
-using System.Linq;
-using static RoomCamera;
 using System.Collections.Generic;
-using System.IO;
-using System.Runtime.CompilerServices;
 using System.Net.Http;
 using System.Globalization;
 using System.Threading.Tasks;
+using Menu.Remix.MixedUI;
 
 // Allows access to private members
 #pragma warning disable CS0618
@@ -256,7 +252,7 @@ namespace Vestiges {
 					lastVestigeSpawns.Add(vestigeSpawnQueue[queueIndex].safeCoord);
 					vestigeCount++;
 
-					bool devCheck = (DateTime.Compare(DateTime.Now, lastDev) > 0);
+					bool devCheck = DateTime.Compare(DateTime.Now, lastDev) > 0;
 
 					if (!Options.StealthMode.Value && devCheck) {
 						UploadVestige(newSpawn);
@@ -327,16 +323,18 @@ namespace Vestiges {
 		private void UploadVestige(VestigeSpawn newVest) {
 			Logger.LogDebug("Attempting to upload Vestige... [" + newVest.room + ":" + newVest.region + ":(" + newVest.colour.r.ToString() + "," + newVest.colour.g.ToString() + "," + newVest.colour.b.ToString() + "):(" + newVest.spawn.x.ToString() + "," + newVest.spawn.y.ToString() + "):(" + newVest.target.x.ToString() + "," + newVest.target.y.ToString() + ")]");
 
-			Dictionary<string, string> encodedSpawnData = new Dictionary<string, string>();
-			encodedSpawnData.Add("entry." + Options.EntryA.Value, newVest.room);
-			encodedSpawnData.Add("entry." + Options.EntryB.Value, newVest.region);
-			encodedSpawnData.Add("entry." + Options.EntryC.Value, newVest.colour.r.ToString());
-			encodedSpawnData.Add("entry." + Options.EntryD.Value, newVest.colour.g.ToString());
-			encodedSpawnData.Add("entry." + Options.EntryE.Value, newVest.colour.b.ToString());
-			encodedSpawnData.Add("entry." + Options.EntryF.Value, newVest.spawn.x.ToString());
-			encodedSpawnData.Add("entry." + Options.EntryG.Value, newVest.spawn.y.ToString());
-			encodedSpawnData.Add("entry." + Options.EntryH.Value, newVest.target.x.ToString());
-			encodedSpawnData.Add("entry." + Options.EntryI.Value, newVest.target.y.ToString());
+			Dictionary<string, string> encodedSpawnData = new Dictionary<string, string>
+			{
+				{ "entry." + Options.EntryA.Value, newVest.room },
+				{ "entry." + Options.EntryB.Value, newVest.region },
+				{ "entry." + Options.EntryC.Value, newVest.colour.r.ToString() },
+				{ "entry." + Options.EntryD.Value, newVest.colour.g.ToString() },
+				{ "entry." + Options.EntryE.Value, newVest.colour.b.ToString() },
+				{ "entry." + Options.EntryF.Value, newVest.spawn.x.ToString() },
+				{ "entry." + Options.EntryG.Value, newVest.spawn.y.ToString() },
+				{ "entry." + Options.EntryH.Value, newVest.target.x.ToString() },
+				{ "entry." + Options.EntryI.Value, newVest.target.y.ToString() }
+			};
 
 			httpClient.PostAsync("https://docs.google.com/forms/u/0/d/e/" + Options.UploadID.Value + "/formResponse", new FormUrlEncodedContent(encodedSpawnData));
 		}
@@ -349,7 +347,7 @@ namespace Vestiges {
 					isDownloading = true;
 				}
 
-				string rawDataset = "";
+				string rawDataset;
 				try {
 					rawDataset = await httpClient.GetStringAsync("https://docs.google.com/spreadsheet/ccc?key=" + Options.DownloadID.Value + "&output=csv");
 				} catch (Exception err) {
@@ -471,7 +469,7 @@ namespace Vestiges {
 				}
 			}
 			vestigeCount -= localvestigeData.Count;
-			Logger.LogDebug(validEntries + "/" + (totalEntries) + " Vestiges were downloaded (" + newEntries + " new, " + localvestigeData.Count + " (local) removed and " + vestigeCount + " loaded)");
+			Logger.LogDebug(validEntries + "/" + totalEntries + " Vestiges were downloaded (" + newEntries + " new, " + localvestigeData.Count + " (local) removed and " + vestigeCount + " loaded)");
 			localvestigeData.Clear();
 		}
 

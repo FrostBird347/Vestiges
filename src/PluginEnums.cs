@@ -1,5 +1,4 @@
-﻿using System;
-namespace Vestiges {
+﻿namespace Vestiges {
 	public class PluginEnums {
 		public static CosmeticInsect.Type Vestige;
 
@@ -8,10 +7,8 @@ namespace Vestiges {
 		}
 
 		public static void UnregisterEnums() {
-			if (Vestige != null) {
-				Vestige.Unregister();
-				Vestige = null;
-			}
+			Vestige?.Unregister();
+			Vestige = null;
 		}
 
 	}

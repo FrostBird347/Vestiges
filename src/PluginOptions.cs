@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Security.Policy;
 using BepInEx.Logging;
 using Menu.Remix.MixedUI;
 using UnityEngine;
@@ -74,12 +73,12 @@ namespace Vestiges {
 			RefreshVestiges.greyedOut = true;
 
 			OpLabel VestigeStatus = new OpLabel(150F, 490f, "Failed to download Vestiges!");
-			if (Vestiges.Plugin.isDownloading) VestigeStatus.text = "Vestiges are still downloading...";
-			if (Vestiges.Plugin.isDownloaded) VestigeStatus.text = "Vestiges have been downloaded (" + Vestiges.Plugin.vestigeCount + " loaded)";
+			if (Plugin.isDownloading) VestigeStatus.text = "Vestiges are still downloading...";
+			if (Plugin.isDownloaded) VestigeStatus.text = "Vestiges have been downloaded (" + Plugin.vestigeCount + " loaded)";
 
 			OpTab opTab = new OpTab(this, "Options");
 			OpTab opTabTwo = new OpTab(this, "Upload/Download Settings");
-			this.Tabs = new[]
+			Tabs = new[]
 			{
 				opTab,
 				opTabTwo
