@@ -39,6 +39,7 @@ namespace Vestiges {
 		private UIelement[] UIArrPlayerOptions;
 		private UIelement[] UIArrPlayerOptionsTwo;
 		public OpLabel CurrentStatusLabel;
+		private OpSimpleButton CurrentReloadButton;
 
 		public PluginOptions(Plugin pluginInstance, ManualLogSource logSource) {
 			plugin = pluginInstance;
@@ -73,16 +74,25 @@ namespace Vestiges {
 			CurrentStatusLabel = null;
 		}
 
-		public override void Initialize() {
-			OpSimpleButton RefreshVestiges = new OpSimpleButton(new Vector2(10f, 490f), new Vector2(125f, 10f), "Reload Vestiges") {
-				description = "Clear and redownload all Vestiges",
-				greyedOut = Plugin.isDownloading
-			};
-			RefreshVestiges.OnClick += plugin.OnReloadButton;
+		public void RefreshStatusAndButton() {
+			if (CurrentReloadButton != null && CurrentStatusLabel != null) {
+				CurrentReloadButton.greyedOut = Plugin.isDownloading;
 
-			CurrentStatusLabel = new OpLabel(150F, 490f, "Failed to download Vestiges!");
-			if (Plugin.isDownloading) CurrentStatusLabel.text = "Vestiges are still downloading...";
-			if (Plugin.isDownloaded) CurrentStatusLabel.text = "Vestiges have been downloaded (" + Plugin.vestigeCount + " loaded)";
+				CurrentStatusLabel.text = "Failed to download Vestiges!";
+				if (Plugin.isDownloading) CurrentStatusLabel.text = "Vestiges are still downloading...";
+				if (Plugin.isDownloaded) CurrentStatusLabel.text = "Vestiges have been downloaded (" + Plugin.vestigeCount + " loaded)";
+			}
+		}
+
+		public override void Initialize() {
+			CurrentReloadButton = new OpSimpleButton(new Vector2(10f, 490f), new Vector2(125f, 10f), "Reload Vestiges") {
+				description = "Clear and redownload all Vestiges",
+			};
+			CurrentStatusLabel = new OpLabel(150F, 490f, "RefreshStatusAndButton() was somehow never called???");
+
+			RefreshStatusAndButton();
+			CurrentReloadButton.OnClick += plugin.OnReloadButton;
+
 
 			OpTab opTab = new OpTab(this, "Options");
 			OpTab opTabTwo = new OpTab(this, "Upload/Download Settings");
@@ -125,7 +135,7 @@ namespace Vestiges {
 				new OpLabel(10f, 550f, "Upload/Downlload Options", true),
 				new OpLabel(290f, 550f, "(Only change these if you know what you are doing!)"),
 
-				RefreshVestiges,
+				CurrentReloadButton,
 				CurrentStatusLabel,
 
 				new OpLabel(10f, 430f, "Download ID"),

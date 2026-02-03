@@ -388,9 +388,8 @@ namespace Vestiges {
 			if (!isDownloading && (firstRun || DateTime.Compare(DateTime.Now, nextDownload) > 0)) {
 				Logger.LogDebug("Downloading Vestiges...");
 
-				if (firstRun) {
-					isDownloading = true;
-				}
+				isDownloading = true;
+				Options.RefreshStatusAndButton();
 
 				string rawDataset;
 				try {
@@ -401,6 +400,7 @@ namespace Vestiges {
 						isDownloaded = false;
 					}
 					isDownloading = false;
+					Options.RefreshStatusAndButton();
 					return;
 				}
 				Logger.LogDebug("Loading Vestiges...");
@@ -411,16 +411,18 @@ namespace Vestiges {
 						isDownloaded = false;
 					}
 					isDownloading = false;
+					Options.RefreshStatusAndButton();
 					return;
 				}
 
 				string[] rawRows = rawDataset.Split('\n');
-				if (rawRows.Length <= 0 || !rawRows[0].Trim('\r').StartsWith("Timestamp,room,region,colour.r,colour.g,colour.b,spawn.x,spawn.y,target.x,target.y")) {
+				if (rawRows.Length <= 0 || !rawRows[0].Trim('\r').StartsWith("Timestamp,room,region,colour.r,colour.g,colour.b,spawn.x,spawn.y,target.x,target.y,karma")) {
 					Logger.LogError("rawDataset is not formatted correclty!");
 					if (firstRun) {
 						isDownloaded = false;
 					}
 					isDownloading = false;
+					Options.RefreshStatusAndButton();
 					return;
 				}
 
@@ -435,6 +437,7 @@ namespace Vestiges {
 						Logger.LogError("Download failed: " + err.Message);
 						isDownloaded = false;
 						isDownloading = false;
+						Options.RefreshStatusAndButton();
 						return;
 					}
 					Logger.LogDebug("Loading historical Vestiges... (this will take a LONG time to process)");
@@ -443,6 +446,7 @@ namespace Vestiges {
 						Logger.LogError("rawDataset is either null or empty!");
 						isDownloaded = false;
 						isDownloading = false;
+						Options.RefreshStatusAndButton();
 						return;
 					}
 
@@ -451,6 +455,7 @@ namespace Vestiges {
 						Logger.LogError("rawDataset is not formatted correclty!");
 						isDownloaded = false;
 						isDownloading = false;
+						Options.RefreshStatusAndButton();
 						return;
 					}
 
@@ -465,6 +470,7 @@ namespace Vestiges {
 			} else {
 				Logger.LogDebug("Skipped download attempt: it has been less than half an hour!");
 			}
+			Options.RefreshStatusAndButton();
 		}
 
 		private void ParseRawVestiges(string[] rawRows, bool printProgress = false) {
@@ -555,10 +561,7 @@ namespace Vestiges {
 		public void OnReloadButton(UIfocusable button) {
 			button.greyedOut = true;
 			ClearVestiges();
-			DownloadVestiges(true);
-			//This should never be called when the label isn't null, but just to be safe we check regardless
-			if (Options.CurrentStatusLabel != null)
-				Options.CurrentStatusLabel.text = "Cleared and redownloading vestiges...\nThis text will only update after exiting back to the main menu!";
+			Task.Run(() => DownloadVestiges(true));
 		}
 	}
 }
