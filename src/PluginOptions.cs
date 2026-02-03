@@ -101,7 +101,7 @@ namespace Vestiges {
 				new OpLabel(10f, 460f, "Vestige Lights"),
 				new OpCheckBox(VestigeLights, 91f, 460f) { description = "Vestiges will produce a small amount of light" },
 				new OpLabel(125f, 460f, "Stealth Mode"),
-				new OpCheckBox(StealthMode, 204f, 460f) { description = "Prevents any new vestiges from being uploaded. They will still appear locally until the cache is reset." },
+				new OpCheckBox(StealthMode, 204f, 460f) { description = "Prevents any new vestiges from being uploaded. They will still appear locally until the cache is reset and the colour will be temporarily inverted on player death." },
 				new OpLabel(238f, 460f, "Remove Timeout"),
 				new OpCheckBox(InfiniteLifespan, 339f, 460f) { description = "Remove Vestige timeout and download historical Vistages from a seperate online backup. This option is disabled by default for a reason, you have been warned!" },
 

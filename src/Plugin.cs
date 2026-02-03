@@ -148,7 +148,7 @@ namespace Vestiges {
 							currentSize = 2;
 						}
 
-						Vestige newBug = new Vestige(newRoom, new Vector2(0, 0), spawnInfo.spawn, spawnInfo.target, spawnInfo.colour, currentSize, Options.VestigeLights.Value);
+						Vestige newBug = new Vestige(newRoom, new Vector2(0, 0), spawnInfo.spawn, spawnInfo.target, Options.ShouldOverrideColours.Value ? Options.OverridenColour.Value : spawnInfo.colour, currentSize, Options.VestigeLights.Value);
 						newRoom.AddObject(newBug);
 						activeVestigeList.Add(newBug);
 					}
@@ -162,7 +162,7 @@ namespace Vestiges {
 								currentSize = 2;
 							}
 
-							Vestige newBug = new Vestige(newRoom, new Vector2(0, 0), localvestigeData[i].spawn, localvestigeData[i].target, localvestigeData[i].colour, currentSize, Options.VestigeLights.Value);
+							Vestige newBug = new Vestige(newRoom, new Vector2(0, 0), localvestigeData[i].spawn, localvestigeData[i].target, Options.ShouldOverrideColours.Value ? Options.OverridenColour.Value : localvestigeData[i].colour, currentSize, Options.VestigeLights.Value);
 							newRoom.AddObject(newBug);
 							activeVestigeList.Add(newBug);
 						}
@@ -265,12 +265,11 @@ namespace Vestiges {
 					}
 
 					if (self.room != null && self.room.abstractRoom.name == vestigeSpawnQueue[queueIndex].room) {
-						Vestige newBug = new Vestige(self.room, new Vector2(0, 0), newSpawn.spawn, newSpawn.target, newSpawn.colour, 2, Options.VestigeLights.Value);
+						Vestige newBug = new Vestige(self.room, new Vector2(0, 0), newSpawn.spawn, newSpawn.target, Options.ShouldOverrideColours.Value ? Options.OverridenColour.Value : newSpawn.colour, 2, Options.VestigeLights.Value);
 
-						//Make sure it's obvious offline mode is active while still not being intrusive (it took me long enough to manage to boot into windows, figuring out how to add custom warning text might require more time than I have right now)
 						if (Options.StealthMode.Value) {
 							newBug.col = new Color(1 - newBug.col.r, 1 - newBug.col.g, 1 - newBug.col.b);
-							Logger.LogWarning("Inverted Vestige because stealth mode is enabled!");
+							Logger.LogWarning("Inverted Vestige colour because stealth mode is enabled!");
 						}
 
 						self.room.AddObject(newBug);
