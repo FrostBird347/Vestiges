@@ -41,8 +41,8 @@ namespace Vestiges {
 		int vestigeUploadLimiter;
 		List<WorldCoordinate> lastVestigeSpawns;
 		public static Dictionary<Player, int> lastKarmas;
-		//-1 = unlock asap, 0 = do nothing, 1 = lock the first player you find asap
-		private int lastKarmaState;
+		private bool mustCheckKarma;
+		private bool justReachedEndScreen;
 		private DateTime lastDev;
 
 		private static readonly HttpClient httpClient = new HttpClient();
@@ -58,10 +58,12 @@ namespace Vestiges {
 
 			On.Player.NewRoom += SpawnVestiges;
 			On.RainWorldGame.Update += UpdateGame;
+			On.KarmaFlower.BitByPlayer += LockKarma;
 			On.Player.Die += OnDeath;
 			On.Player.Grabbed += OnGrabDeath;
 			On.RainWorldGame.ctor += StartCycle;
-			On.KarmaFlower.BitByPlayer += LockKarma;
+			On.SaveState.SessionEnded += ReachEndScreen;
+			On.RainWorldGame.ShutDownProcess += EndCycle;
 		}
 
 		private void Init(On.RainWorld.orig_OnModsInit orig, RainWorld self) {
@@ -85,7 +87,8 @@ namespace Vestiges {
 				vestigeUploadLimiter = 150;
 				lastVestigeSpawns = new List<WorldCoordinate>();
 				lastKarmas = new Dictionary<Player, int>();
-				lastKarmaState = 0;
+				mustCheckKarma = false;
+				justReachedEndScreen = false;
 				lastDev = DateTime.Now.AddYears(-1);
 
 				isDownloading = false;
@@ -117,10 +120,12 @@ namespace Vestiges {
 
 					On.Player.NewRoom -= SpawnVestiges;
 					On.RainWorldGame.Update -= UpdateGame;
+					On.KarmaFlower.BitByPlayer -= LockKarma;
 					On.Player.Die -= OnDeath;
 					On.Player.Grabbed -= OnGrabDeath;
 					On.RainWorldGame.ctor -= StartCycle;
-					On.KarmaFlower.BitByPlayer -= LockKarma;
+					On.SaveState.SessionEnded -= ReachEndScreen;
+					On.RainWorldGame.ShutDownProcess -= EndCycle;
 				}
 
 				Logger.LogDebug("Init done");
@@ -191,13 +196,10 @@ namespace Vestiges {
 				if (abstractPlayer?.realizedCreature != null && abstractPlayer?.realizedCreature is Player) {
 					Player player = abstractPlayer.realizedCreature as Player;
 
-					if (lastKarmaState != 0 && self.session is StoryGameSession) {
-						(self.session as StoryGameSession).saveState.deathPersistentSaveData.reinforcedKarma = lastKarmaState == 1;
-						if (lastKarmaState == 1)
+					if (mustCheckKarma && self.session is StoryGameSession) {
+						mustCheckKarma = false;
+						if ((self.session as StoryGameSession).saveState.deathPersistentSaveData.reinforcedKarma)
 							lastKarmas[player] = int.MaxValue;
-						if (lastKarmaState == -1)
-							TriggerKarmaAnim(player, Logger);
-						lastKarmaState = 0;
 					}
 
 					if (player.room != null) {
@@ -211,7 +213,7 @@ namespace Vestiges {
 						backupTargets.Add(player.playerState.playerNumber, player.coord);
 					}
 
-					if (!self.GameOverModeActive && lastKarmas.ContainsKey(player) && lastKarmas[player] < self.clock && self.session is StoryGameSession) {
+					if (!self.GameOverModeActive && lastKarmas.ContainsKey(player) && lastKarmas[player] <= self.clock && self.session is StoryGameSession) {
 						lastKarmas.Remove(player);
 						Logger.LogDebug("There are now " + lastKarmas.Count + " slugcats with temporary karma!");
 						if (lastKarmas.Count == 0) {
@@ -233,7 +235,7 @@ namespace Vestiges {
 			orig(self, grasp, eu);
 			if (grasp.grabber is Player && self.BitesLeft < 1) {
 				Logger.LogDebug("Karma flower was consumed, setting the player's karma timer to int.MaxValue...");
-				if (lastKarmas.Count > 0)
+				if (lastKarmas.Count > 0 && !lastKarmas.Values.Any(value => value == int.MaxValue))
 					TriggerKarmaAnim(grasp.grabber as Player, Logger);
 				lastKarmas[grasp.grabber as Player] = int.MaxValue;
 			}
@@ -284,9 +286,7 @@ namespace Vestiges {
 				if (self.room != null) {
 					AddNewVestige(self);
 				}
-
 			}
-
 		}
 
 		private void AddNewVestige(Player self) {
@@ -335,13 +335,31 @@ namespace Vestiges {
 			}
 		}
 
+		private void ReachEndScreen(On.SaveState.orig_SessionEnded orig, SaveState self, RainWorldGame game, bool survived, bool newMalnourished) {
+			justReachedEndScreen = true;
+			if (survived && lastKarmas.Count > 0 && !lastKarmas.Values.Any(value => value == int.MaxValue) && game.IsStorySession) {
+				Logger.LogDebug("Removing temporary karma...");
+				self.deathPersistentSaveData.reinforcedKarma = false;
+			}
+		}
+
+		private void EndCycle(On.RainWorldGame.orig_ShutDownProcess orig, RainWorldGame self) {
+			if (!justReachedEndScreen && self.IsStorySession && self.clock < 40 * 30 && lastKarmas.Count > 0 && !lastKarmas.Values.Any(value => value == int.MaxValue) && self.GetStorySession?.saveState?.deathPersistentSaveData?.reinforcedKarma == true) {
+				Logger.LogDebug("Removing temporary karma...");
+				self.GetStorySession.saveState.deathPersistentSaveData.reinforcedKarma = false;
+				self.GetStorySession.saveState.progression.SaveDeathPersistentDataOfCurrentState(false, false);
+			}
+			orig(self);
+			//Just to be absolutely certain that this doesn't somehow get called multiple times
+			justReachedEndScreen = true;
+		}
+
 		private void StartCycle(On.RainWorldGame.orig_ctor orig, RainWorldGame self, ProcessManager manager) {
 			orig(self, manager);
 
-			//If a karma timer is infinite set the value to 1, if no karma timers exist set it to 0, otherwise set it to -1
-			lastKarmaState = lastKarmas.Values.Any(value => value == int.MaxValue) ? 1 : (lastKarmas.Count == 0 ? 0 : -1);
+			mustCheckKarma = self.session is StoryGameSession;
+			justReachedEndScreen = false;
 			lastKarmas.Clear();
-
 			activeRooms.Clear();
 			if (lastLifespan != Options.Lifespan.Value || lastInfiniteLifespan != Options.InfiniteLifespan.Value) {
 				Logger.LogDebug("Vestige lifespan has changed, clearing and redownloading Vestiges...");
