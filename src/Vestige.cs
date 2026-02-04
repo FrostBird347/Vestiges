@@ -60,9 +60,10 @@ namespace Vestiges {
 		}
 
 		public override void Update(bool eu) {
-			if (room == null) {
+			if (room == null || !exists) {
+				if (exists)
+					Destroy();
 				exists = false;
-				Destroy();
 				return;
 			}
 
