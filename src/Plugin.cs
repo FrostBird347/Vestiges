@@ -41,6 +41,8 @@ namespace Vestiges {
 		int vestigeUploadLimiter;
 		List<WorldCoordinate> lastVestigeSpawns;
 		public static Dictionary<Player, int> lastKarmas;
+		//-1 = unlock asap, 0 = do nothing, 1 = lock the first player you find asap
+		private int lastKarmaState;
 		private DateTime lastDev;
 
 		private static readonly HttpClient httpClient = new HttpClient();
@@ -83,6 +85,7 @@ namespace Vestiges {
 				vestigeUploadLimiter = 150;
 				lastVestigeSpawns = new List<WorldCoordinate>();
 				lastKarmas = new Dictionary<Player, int>();
+				lastKarmaState = 0;
 				lastDev = DateTime.Now.AddYears(-1);
 
 				isDownloading = false;
@@ -188,6 +191,15 @@ namespace Vestiges {
 				if (abstractPlayer?.realizedCreature != null && abstractPlayer?.realizedCreature is Player) {
 					Player player = abstractPlayer.realizedCreature as Player;
 
+					if (lastKarmaState != 0 && self.session is StoryGameSession) {
+						(self.session as StoryGameSession).saveState.deathPersistentSaveData.reinforcedKarma = lastKarmaState == 1;
+						if (lastKarmaState == 1)
+							lastKarmas[player] = int.MaxValue;
+						if (lastKarmaState == -1)
+							TriggerKarmaAnim(player, Logger);
+						lastKarmaState = 0;
+					}
+
 					if (player.room != null) {
 						if (self.devToolsActive)
 							lastDev = DateTime.Now.AddMinutes(5);
@@ -264,7 +276,7 @@ namespace Vestiges {
 
 				//Don't let temporary reinforced karma work instead of the first karma flower
 				bool karma = self.KarmaIsReinforced
-					&& lastKarmas.Values.Any(value => value - self.room.game.clock > 1000000)
+					&& lastKarmas.Values.Any(value => value == int.MaxValue)
 					&& self.grasps.Any(grasp => grasp?.grabbed is KarmaFlower);
 				VestigeSpawnQueue newSpawn = new VestigeSpawnQueue(self.coord, safePos, self.ShortCutColor(), karma);
 				vestigeSpawnQueue.Add(newSpawn);
@@ -326,8 +338,11 @@ namespace Vestiges {
 		private void StartCycle(On.RainWorldGame.orig_ctor orig, RainWorldGame self, ProcessManager manager) {
 			orig(self, manager);
 
-			activeRooms.Clear();
+			//If a karma timer is infinite set the value to 1, if no karma timers exist set it to 0, otherwise set it to -1
+			lastKarmaState = lastKarmas.Values.Any(value => value == int.MaxValue) ? 1 : (lastKarmas.Count == 0 ? 0 : -1);
 			lastKarmas.Clear();
+
+			activeRooms.Clear();
 			if (lastLifespan != Options.Lifespan.Value || lastInfiniteLifespan != Options.InfiniteLifespan.Value) {
 				Logger.LogDebug("Vestige lifespan has changed, clearing and redownloading Vestiges...");
 				ClearVestiges();

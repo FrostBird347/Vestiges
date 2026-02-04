@@ -84,7 +84,7 @@ namespace Vestiges {
 						lastKarmaLog = DateTime.Now;
 
 						//Also we don't trigger the animation if someone's karma timer is 'infinite'
-						if (!saveData.reinforcedKarma || (isNewPlayer && !Plugin.lastKarmas.Values.Any(value => value - room.game.clock > 1000000))) {
+						if (!saveData.reinforcedKarma || (isNewPlayer && !Plugin.lastKarmas.Values.Any(value => value == int.MaxValue))) {
 							saveData.reinforcedKarma = true;
 
 							Plugin.TriggerKarmaAnim(player, Logger);
