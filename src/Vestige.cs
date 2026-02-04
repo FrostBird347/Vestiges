@@ -69,11 +69,11 @@ namespace Vestiges {
 
 			if (karma) {
 				foreach (Player player in room.PlayersInRoom) {
-					if (!player.room.game.GameOverModeActive && !player.dead && (player.IsJollyPlayer || !player.isSlugpup) && player.room == room && !player.inShortcut && Vector2.Distance(pos, player.mainBodyChunk.pos) < 50f && player.room.game.session is StoryGameSession) {
+					if (player.room == room && !player.dead && !player.inShortcut && (player.IsJollyPlayer || !player.isSlugpup) && !player.room.game.GameOverModeActive && player.room.game.session is StoryGameSession && Vector2.Distance(pos, player.mainBodyChunk.pos) < 50f) {
 						DeathPersistentSaveData saveData = (player.room.game.session as StoryGameSession).saveState.deathPersistentSaveData;
 
 						//Should be 40 ticks per second at normal speed, I don't know of any better way to keep track of the time while also taking the pause screen into account
-						int newTime = player.timeSinceSpawned + (int)Math.Round(sizeMult * 3.5 * 60 * 40);
+						int newTime = player.timeSinceSpawned + (int)(sizeMult * 3.5f * 40f * 60f);
 						bool isNewPlayer = !Plugin.lastKarmas.ContainsKey(player);
 						if (isNewPlayer || newTime > Plugin.lastKarmas[player])
 							Plugin.lastKarmas[player] = newTime;
@@ -98,9 +98,9 @@ namespace Vestiges {
 			vel.x += dir.x * 0.45f;
 			vel.y += dir.y * 0.45f;
 
-			if (Random.value > 0.95f * targetSwitchMult && !noTarget) {
+			if (!noTarget && Random.value > 0.95f * targetSwitchMult) {
 				noTarget = true;
-			} else if (Random.value > 0.75f && noTarget) {
+			} else if (noTarget && Random.value > 0.75f) {
 				noTarget = false;
 			}
 
