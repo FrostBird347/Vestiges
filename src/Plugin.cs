@@ -22,7 +22,7 @@ namespace Vestiges {
 	public sealed class Plugin : BaseUnityPlugin {
 		public const string PLUGIN_GUID = "frostbird347.vestiges";
 		public const string PLUGIN_NAME = "Vestiges";
-		public const string PLUGIN_VERSION = "1.0.0";
+		public const string PLUGIN_VERSION = "1.0.1";
 		
 		bool init;
 		private PluginOptions Options = null;
@@ -216,7 +216,7 @@ namespace Vestiges {
 					if (!self.GameOverModeActive && lastKarmas.ContainsKey(player) && lastKarmas[player] <= self.clock && self.session is StoryGameSession) {
 						lastKarmas.Remove(player);
 						Logger.LogDebug("There are now " + lastKarmas.Count + " slugcats with temporary karma!");
-						if (lastKarmas.Count == 0) {
+						if (Options.Karma.Value && lastKarmas.Count == 0) {
 							DeathPersistentSaveData saveData = (self.session as StoryGameSession).saveState.deathPersistentSaveData;
 							saveData.reinforcedKarma = false;
 						
@@ -233,7 +233,7 @@ namespace Vestiges {
 		//And here's some keyword spam for anyone searching within this file/project: karma lock karma reinforcement karma reinforce karma reinforced karma locked karma flower karmaFlowerKarmaLockKarmaLockedKarmaReinforcedKarma karma, karma... Karma.
 		private void LockKarma(On.KarmaFlower.orig_BitByPlayer orig, KarmaFlower self, Creature.Grasp grasp, bool eu) {
 			orig(self, grasp, eu);
-			if (grasp.grabber is Player && self.BitesLeft < 1) {
+			if (Options.Karma.Value && grasp.grabber is Player && self.BitesLeft < 1) {
 				Logger.LogDebug("Karma flower was consumed, setting the player's karma timer to int.MaxValue...");
 				if (lastKarmas.Count > 0 && !lastKarmas.Values.Any(value => value == int.MaxValue))
 					TriggerKarmaAnim(grasp.grabber as Player, Logger);
@@ -337,14 +337,15 @@ namespace Vestiges {
 
 		private void ReachEndScreen(On.SaveState.orig_SessionEnded orig, SaveState self, RainWorldGame game, bool survived, bool newMalnourished) {
 			justReachedEndScreen = true;
-			if (survived && lastKarmas.Count > 0 && !lastKarmas.Values.Any(value => value == int.MaxValue) && game.IsStorySession) {
+			if (Options.Karma.Value && survived && lastKarmas.Count > 0 && !lastKarmas.Values.Any(value => value == int.MaxValue) && game.IsStorySession) {
 				Logger.LogDebug("Removing temporary karma...");
 				self.deathPersistentSaveData.reinforcedKarma = false;
 			}
+			orig(self, game, survived, newMalnourished);
 		}
 
 		private void EndCycle(On.RainWorldGame.orig_ShutDownProcess orig, RainWorldGame self) {
-			if (!justReachedEndScreen && self.IsStorySession && self.clock < 40 * 30 && lastKarmas.Count > 0 && !lastKarmas.Values.Any(value => value == int.MaxValue) && self.GetStorySession?.saveState?.deathPersistentSaveData?.reinforcedKarma == true) {
+			if (Options.Karma.Value && !justReachedEndScreen && self.IsStorySession && self.clock < 40 * 30 && lastKarmas.Count > 0 && !lastKarmas.Values.Any(value => value == int.MaxValue) && self.GetStorySession?.saveState?.deathPersistentSaveData?.reinforcedKarma == true) {
 				Logger.LogDebug("Removing temporary karma...");
 				self.GetStorySession.saveState.deathPersistentSaveData.reinforcedKarma = false;
 				self.GetStorySession.saveState.progression.SaveDeathPersistentDataOfCurrentState(false, false);
