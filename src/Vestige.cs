@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using RWCustom;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -67,12 +68,13 @@ namespace Vestiges {
 
 			if (karma) {
 				foreach (Player player in room.PlayersInRoom) {
-					if (!player.dead && (player.IsJollyPlayer || !player.isSlugpup) && player.room == room && !player.inShortcut && Vector2.Distance(pos, player.mainBodyChunk.pos) < 50f && player.room.game.session is StoryGameSession) {
+					if (!player.room.game.GameOverModeActive && !player.dead && (player.IsJollyPlayer || !player.isSlugpup) && player.room == room && !player.inShortcut && Vector2.Distance(pos, player.mainBodyChunk.pos) < 50f && player.room.game.session is StoryGameSession) {
 						DeathPersistentSaveData saveData = (player.room.game.session as StoryGameSession).saveState.deathPersistentSaveData;
 
 						//Should be 40 ticks per second at normal speed, I don't know of any better way to keep track of the time while also taking the pause screen into account
 						int newTime = player.timeSinceSpawned + (int)Math.Round(sizeMult * 3.5 * 60 * 40);
-						if (!Plugin.lastKarmas.ContainsKey(player) || newTime > Plugin.lastKarmas[player])
+						bool isNewPlayer = !Plugin.lastKarmas.ContainsKey(player);
+						if (isNewPlayer || newTime > Plugin.lastKarmas[player])
 							Plugin.lastKarmas[player] = newTime;
 
 						//Only log it once every 5 seconds
@@ -80,7 +82,8 @@ namespace Vestiges {
 							Logger?.LogDebug("Karma timer is now at ~" + Math.Round((Plugin.lastKarmas[player] - player.timeSinceSpawned) / 40f) + " seconds!");
 						lastKarmaLog = DateTime.Now;
 
-						if (!saveData.reinforcedKarma) {
+						//Also we don't trigger the animation if someone's karma timer is 'infinite'
+						if (!saveData.reinforcedKarma || (isNewPlayer && !Plugin.lastKarmas.Values.Any(value => value - room.game.clock > 1000000))) {
 							saveData.reinforcedKarma = true;
 
 							Plugin.TriggerKarmaAnim(player, Logger);
@@ -91,8 +94,8 @@ namespace Vestiges {
 			}
 
 			vel *= 0.95f;
-			vel.x += dir.x * 0.3f;
-			vel.y += dir.y * 0.3f;
+			vel.x += dir.x * 0.45f;
+			vel.y += dir.y * 0.45f;
 
 			if (Random.value > 0.95f * targetSwitchMult && !noTarget) {
 				noTarget = true;

@@ -10,7 +10,6 @@ using System.Globalization;
 using System.Threading.Tasks;
 using Menu.Remix.MixedUI;
 using System.Linq;
-using IL.Watcher;
 
 // Allows access to private members
 #pragma warning disable CS0618
@@ -23,7 +22,7 @@ namespace Vestiges {
 	public sealed class Plugin : BaseUnityPlugin {
 		public const string PLUGIN_GUID = "frostbird347.vestiges";
 		public const string PLUGIN_NAME = "Vestiges";
-		public const string PLUGIN_VERSION = "0.12.0";
+		public const string PLUGIN_VERSION = "1.0.0";
 		
 		bool init;
 		private PluginOptions Options = null;
@@ -44,8 +43,6 @@ namespace Vestiges {
 		public static Dictionary<Player, int> lastKarmas;
 		private DateTime lastDev;
 
-		bool isStory;
-
 		private static readonly HttpClient httpClient = new HttpClient();
 		public static bool isDownloading;
 		public static bool isDownloaded;
@@ -58,11 +55,11 @@ namespace Vestiges {
 			On.RainWorld.OnModsInit += Init;
 
 			On.Player.NewRoom += SpawnVestiges;
-			On.Player.Update += UpdateFly;
+			On.RainWorldGame.Update += UpdateGame;
 			On.Player.Die += OnDeath;
 			On.Player.Grabbed += OnGrabDeath;
 			On.RainWorldGame.ctor += StartCycle;
-			On.KarmaFlower.BitByPlayer += ClearKarma;
+			On.KarmaFlower.BitByPlayer += LockKarma;
 		}
 
 		private void Init(On.RainWorld.orig_OnModsInit orig, RainWorld self) {
@@ -87,8 +84,6 @@ namespace Vestiges {
 				lastVestigeSpawns = new List<WorldCoordinate>();
 				lastKarmas = new Dictionary<Player, int>();
 				lastDev = DateTime.Now.AddYears(-1);
-
-				isStory = false;
 
 				isDownloading = false;
 				isDownloaded = false;
@@ -118,10 +113,11 @@ namespace Vestiges {
 					Logger.LogFatal("Config failed to load, this mod has somewhat disabled itself for safety!");
 
 					On.Player.NewRoom -= SpawnVestiges;
-					On.Player.Update -= UpdateFly;
+					On.RainWorldGame.Update -= UpdateGame;
 					On.Player.Die -= OnDeath;
 					On.Player.Grabbed -= OnGrabDeath;
 					On.RainWorldGame.ctor -= StartCycle;
+					On.KarmaFlower.BitByPlayer -= LockKarma;
 				}
 
 				Logger.LogDebug("Init done");
@@ -178,49 +174,52 @@ namespace Vestiges {
 			}
 		}
 
-		private void UpdateFly(On.Player.orig_Update orig, Player self, bool eu) {
-			orig(self, eu);
+		private void UpdateGame(On.RainWorldGame.orig_Update orig, RainWorldGame self) {
+			orig(self);
+			
+			for (int i = activeVestigeList.Count - 1; i >= 0; i--) {
+				if (activeVestigeList[i] == null || !activeVestigeList[i].exists) {
+					activeVestigeList[i] = null;
+					activeVestigeList.RemoveAt(i);
+				}
+			}
 
-			if (self.IsJollyPlayer || !self.isSlugpup) {
-				for (int i = activeVestigeList.Count - 1; i >= 0; i--) {
-					if (activeVestigeList[i] != null && activeVestigeList[i].exists) {
-						activeVestigeList[i].Update(eu);
-					} else {
-						activeVestigeList[i] = null;
-						activeVestigeList.RemoveAt(i);
+			foreach (AbstractCreature abstractPlayer in self.Players) {
+				if (abstractPlayer?.realizedCreature != null && abstractPlayer?.realizedCreature is Player) {
+					Player player = abstractPlayer.realizedCreature as Player;
+
+					if (player.room != null) {
+						if (self.devToolsActive)
+							lastDev = DateTime.Now.AddMinutes(5);
+						AddNewVestige(player);
 					}
-				}
 
-				if (self.room != null) {
-					isStory = self.room.world.game.IsStorySession;
-					AddNewVestige(self);
-				}
+					if (player.lowerBodyFramesOnGround > 0 && !player.dead && !player.Stunned && player.grabbedBy.Count == 0) {
+						backupTargets.Remove(player.playerState.playerNumber);
+						backupTargets.Add(player.playerState.playerNumber, player.coord);
+					}
 
-				if (self.room != null && self.room.world.game.devToolsActive) {
-					lastDev = DateTime.Now.AddMinutes(5);
-				}
-
-				if (self.lowerBodyFramesOnGround > 0 && !self.dead && !self.Stunned && self.grabbedBy.Count == 0) {
-					backupTargets.Remove(self.playerState.playerNumber);
-					backupTargets.Add(self.playerState.playerNumber, self.coord);
-				}
-
-				if (!self.dead && lastKarmas.ContainsKey(self) && lastKarmas[self] < self.room.game.clock && self.room.game.session is StoryGameSession) {
-					lastKarmas.Remove(self);
-					Logger.LogDebug("There are now " + lastKarmas.Count + " slugcats with temporary karma!");
-					if (lastKarmas.Count == 0) {
-						DeathPersistentSaveData saveData = (self.room.game.session as StoryGameSession).saveState.deathPersistentSaveData;
-						saveData.reinforcedKarma = false;
-					
-						TriggerKarmaAnim(self, Logger);
+					if (!self.GameOverModeActive && lastKarmas.ContainsKey(player) && lastKarmas[player] < self.clock && self.session is StoryGameSession) {
+						lastKarmas.Remove(player);
+						Logger.LogDebug("There are now " + lastKarmas.Count + " slugcats with temporary karma!");
+						if (lastKarmas.Count == 0) {
+							DeathPersistentSaveData saveData = (self.session as StoryGameSession).saveState.deathPersistentSaveData;
+							saveData.reinforcedKarma = false;
+						
+							TriggerKarmaAnim(player, Logger);
+						}
 					}
 				}
 			}
 		}
 
-		private void ClearKarma(On.KarmaFlower.orig_BitByPlayer orig, KarmaFlower self, Creature.Grasp grasp, bool eu) {
+		//If you are writing another mod that locks/reinforces the player's karma and want to ensure compatibility, you just need to run something like Vestiges.Plugin.lastKarmas[player] = int.MaxValue; since the dictionary is public and static
+		//Just make sure that single instruction is isolated in it's own class where you can catch any errors as the class is loaded, otherwise you will have vestiges as a hard dependency when it really doesn't need to be one
+		//Also, previous versions of the mod don't have this dictionary so checking ModManager.ActiveMods.Exists((ModManager.Mod mod) => mod.id == "frostbird347.vestiges"); prior to instantiating might not be enough, just wrap it in a try/catch to be 100% safe
+		//And here's some keyword spam for anyone searching within this file/project: karma lock karma reinforcement karma reinforce karma reinforced karma locked karma flower karmaFlowerKarmaLockKarmaLockedKarmaReinforcedKarma karma, karma... Karma.
+		private void LockKarma(On.KarmaFlower.orig_BitByPlayer orig, KarmaFlower self, Creature.Grasp grasp, bool eu) {
 			orig(self, grasp, eu);
-			if (grasp.grabber is Player && self.BitesLeft == 0) {
+			if (grasp.grabber is Player && self.BitesLeft < 1) {
 				Logger.LogDebug("Karma flower was consumed, setting the player's karma timer to int.MaxValue...");
 				if (lastKarmas.Count > 0)
 					TriggerKarmaAnim(grasp.grabber as Player, Logger);
@@ -252,8 +251,7 @@ namespace Vestiges {
 		}
 
 		private void QueueNewVestige(Player self, bool actuallyDead) {
-
-			if (isStory && (!self.isSlugpup || self.IsJollyPlayer) && !self.isNPC && (!localDeathTimes.ContainsKey(self.playerState.playerNumber) || (DateTime.Now - localDeathTimes[self.playerState.playerNumber]).TotalSeconds >= 10)) {
+			if (self.room.world.game.IsStorySession && (!self.isSlugpup || self.IsJollyPlayer) && !self.isNPC && (!localDeathTimes.ContainsKey(self.playerState.playerNumber) || (DateTime.Now - localDeathTimes[self.playerState.playerNumber]).TotalSeconds >= 10)) {
 				localDeathTimes.Remove(self.playerState.playerNumber);
 				localDeathTimes.Add(self.playerState.playerNumber, DateTime.Now);
 
@@ -264,13 +262,11 @@ namespace Vestiges {
 					safePos = backupTargets[self.playerState.playerNumber];
 				}
 
-				bool karma = false;
-				if (self.KarmaIsReinforced) {
-					foreach (Creature.Grasp grasp in self.grasps) {
-						if (grasp?.grabbed is KarmaFlower) karma = true;
-					}
-				}
-				VestigeSpawnQueue newSpawn = new VestigeSpawnQueue(self.coord, safePos, self.ShortCutColor(),  karma);
+				//Don't let temporary reinforced karma work instead of the first karma flower
+				bool karma = self.KarmaIsReinforced
+					&& lastKarmas.Values.Any(value => value - self.room.game.clock > 1000000)
+					&& self.grasps.Any(grasp => grasp?.grabbed is KarmaFlower);
+				VestigeSpawnQueue newSpawn = new VestigeSpawnQueue(self.coord, safePos, self.ShortCutColor(), karma);
 				vestigeSpawnQueue.Add(newSpawn);
 
 				if (self.room != null) {
@@ -282,8 +278,8 @@ namespace Vestiges {
 		}
 
 		private void AddNewVestige(Player self) {
-			if (isStory && vestigeUploadLimiter <= 150) vestigeUploadLimiter++;
-			if (isStory && vestigeSpawnQueue.Count != 0 && vestigeUploadLimiter >= 150) {
+			if (self.room.world.game.IsStorySession && vestigeUploadLimiter <= 150) vestigeUploadLimiter++;
+			if (self.room.world.game.IsStorySession && vestigeSpawnQueue.Count != 0 && vestigeUploadLimiter >= 150) {
 				int queueIndex = Random.Range(0, vestigeSpawnQueue.Count);
 				bool skip = false;
 				vestigeUploadLimiter = 0;

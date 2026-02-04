@@ -124,7 +124,7 @@ namespace Vestiges {
 				new OpLabel(123f, 460f, "Remove Timeout"),
 				new OpCheckBox(InfiniteLifespan, 224f, 460f) { description = "Remove Vestige timeout and download historical Vistages from a seperate online backup. This option is disabled by default for a reason, you have been warned!" },
 				new OpLabel(258f, 460f, "Karma Vestiges"),
-				new OpCheckBox(Karma, 347f, 460f) { description = "If a player dies with reinforced karma while holding an additional karma flower, their vesitge will temporarilly grant you reinforced karma" },
+				new OpCheckBox(Karma, 347f, 460f) { description = "If a player dies with reinforced karma while holding an additional karma flower, their vesitge will temporarilly grant you reinforced karma\nMods that give you reinforced karma without consuming a karma flower may break if this option is enabled!" },
 				new OpLabel(381f, 460f, "Vestige Lights"),
 				new OpResourceSelector(VestigeLights, new Vector2(462f, 460f), 100f) { description = "Vestiges will produce a small amount of light" },
 
