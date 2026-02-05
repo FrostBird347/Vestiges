@@ -1,6 +1,6 @@
 # Google Sheets
 
-Must be linked to [Google Forms](./GoogleForms.md) if you are planning on uploading new Vestiges.
+Must be linked to [Google Forms](./GoogleForms.md) if you are planning on uploading new vestiges.
 
 It must also have the permissions: `Anyone on the internet with the link can view`.
 

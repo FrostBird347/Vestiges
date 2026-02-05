@@ -84,15 +84,15 @@ namespace Vestiges {
 			if (CurrentReloadButton != null && CurrentStatusLabel != null) {
 				CurrentReloadButton.greyedOut = Plugin.isDownloading;
 
-				CurrentStatusLabel.text = "Failed to download Vestiges!";
+				CurrentStatusLabel.text = "Failed to download vestiges!";
 				if (Plugin.isDownloading) CurrentStatusLabel.text = "Vestiges are still downloading...";
-				if (Plugin.isDownloaded) CurrentStatusLabel.text = "Vestiges have been downloaded (" + Plugin.vestigeCount + " loaded)";
+				if (Plugin.isDownloaded) CurrentStatusLabel.text = "Vestiges have been downloaded (" + Plugin.vestigeCount + " loaded" + (Plugin.vestigeCountKarma > 0 ? (", " + Plugin.vestigeCountKarma + " karma vestiges") : "") + ")";
 			}
 		}
 
 		public override void Initialize() {
 			CurrentReloadButton = new OpSimpleButton(new Vector2(10f, 490f), new Vector2(125f, 10f), "Reload Vestiges") {
-				description = "Clear and redownload all Vestiges",
+				description = "Clear and redownload all vestiges",
 			};
 			CurrentStatusLabel = new OpLabel(150F, 490f, "RefreshStatusAndButton() was somehow never called???");
 
@@ -113,25 +113,25 @@ namespace Vestiges {
 				new OpLabel(10f, 550f, "Options", true),
 
 				new OpLabel(10f, 490f, "Vestige Limit"),
-				new OpUpdown(VestigeLimit, new Vector2(86f, 490f), 75) { description = "Maximum number of Vestiges that can be placed in a single room" },
+				new OpUpdown(VestigeLimit, new Vector2(86f, 490f), 75) { description = "Maximum number of vestiges that can be placed in a single room" },
 				new OpLabel(171f, 490f, "Large Vestige Timeout"),
-				new OpUpdown(LargeHours, new Vector2(300f, 490f), 75) { description = "How many hours Vestiges will be twice as large for" },
+				new OpUpdown(LargeHours, new Vector2(300f, 490f), 75) { description = "How many hours vestiges will be twice as large for" },
 				new OpLabel(385f, 490f, "Vestige Timeout"),
-				new OpUpdown(Lifespan, new Vector2(480f, 490f), 75) { description = "How many hours Vestiges exist for" },
+				new OpUpdown(Lifespan, new Vector2(480f, 490f), 75) { description = "How many hours vestiges will exist for" },
 
 				new OpLabel(10f, 460f, "Stealth Mode"),
-				new OpCheckBox(StealthMode, 89f, 460f) { description = "Prevents any new Vestiges from being uploaded. They will still appear locally until the cache is reset and the colour will be temporarily inverted on player death." },
+				new OpCheckBox(StealthMode, 89f, 460f) { description = "Prevents any new vestiges from being uploaded. They will still appear locally until the cache is reset and the colour will be temporarily inverted on player death." },
 				new OpLabel(123f, 460f, "Remove Timeout"),
-				new OpCheckBox(InfiniteLifespan, 224f, 460f) { description = "Remove Vestige timeout and download historical Vistages from a seperate online backup. This option is disabled by default for a reason, you have been warned!" },
+				new OpCheckBox(InfiniteLifespan, 224f, 460f) { description = "Remove vestige timeout and download historical vestiges from a seperate online backup. This option is disabled by default for a reason, you have been warned!" },
 				new OpLabel(258f, 460f, "Karma Vestiges"),
-				new OpCheckBox(Karma, 347f, 460f) { description = "If a player dies with reinforced karma while holding an additional karma flower, their vesitge will temporarilly grant you reinforced karma\nMods that give you reinforced karma without consuming a karma flower may break if this option is enabled!" },
+				new OpCheckBox(Karma, 347f, 460f) { description = "Mods that give you reinforced karma without consuming a karma flower may break if this option is enabled! This line is on the top because it's less important and might be partially covered.\nIf a player dies with reinforced karma while holding an additional karma flower, their vesitge will temporarilly grant you reinforced karma" },
 				new OpLabel(381f, 460f, "Vestige Lights"),
 				new OpResourceSelector(VestigeLights, new Vector2(462f, 460f), 100f) { description = "Vestiges will produce a small amount of light" },
 
 				new OpLabel(10, 430f, "Override Colours"),
-				new OpCheckBox(ShouldOverrideColours, 108f, 430f) { description = "Replace the colours of all Vestiges" },
+				new OpCheckBox(ShouldOverrideColours, 108f, 430f) { description = "Replace the colours of all vestiges" },
 				new OpLabel(142f, 430f, "Overridden Colour"),
-				new OpColorPicker(OverridenColour, new Vector2(249f, 304f)) { description = "The colour to set all Vestiges to" }
+				new OpColorPicker(OverridenColour, new Vector2(249f, 304f)) { description = "The colour to set all vestiges to" }
 
 			};
 			opTab.AddItems(UIArrPlayerOptions);
@@ -172,7 +172,7 @@ namespace Vestiges {
 				new OpLabel(10f, 70f, "Archive URL"),
 				//Unfortunately the size of the text box determines the string's size limit, so to work around that issue it's set to be ridiculously large
 				//There probably is some other form of input for long text... but I don't really have the time to figure that out right now
-				new OpTextBox(ArchiveURL, new Vector2(200f, 70f), 4000f) { description = "Where historical Vestiges are downloaded" }
+				new OpTextBox(ArchiveURL, new Vector2(200f, 70f), 4000f) { description = "Where historical vestiges are downloaded" }
 			};
 			opTabTwo.AddItems(UIArrPlayerOptionsTwo);
 		}

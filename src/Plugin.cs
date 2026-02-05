@@ -22,7 +22,7 @@ namespace Vestiges {
 	public sealed class Plugin : BaseUnityPlugin {
 		public const string PLUGIN_GUID = "frostbird347.vestiges";
 		public const string PLUGIN_NAME = "Vestiges";
-		public const string PLUGIN_VERSION = "1.0.1";
+		public const string PLUGIN_VERSION = "1.0.2";
 		
 		bool init;
 		private PluginOptions Options = null;
@@ -49,6 +49,7 @@ namespace Vestiges {
 		public static bool isDownloading;
 		public static bool isDownloaded;
 		public static int vestigeCount;
+		public static int vestigeCountKarma;
 		private DateTime nextDownload;
 		int lastLifespan;
 		bool lastInfiniteLifespan;
@@ -94,6 +95,7 @@ namespace Vestiges {
 				isDownloading = false;
 				isDownloaded = false;
 				vestigeCount = 0;
+				vestigeCountKarma = 0;
 				nextDownload = DateTime.Now.AddYears(-1);
 				lastLifespan = -1;
 				lastInfiniteLifespan = false;
@@ -298,11 +300,12 @@ namespace Vestiges {
 
 				if (!lastVestigeSpawns.Contains(vestigeSpawnQueue[queueIndex].safeCoord)) {
 
-					VestigeSpawn newSpawn = new VestigeSpawn(vestigeSpawnQueue[queueIndex].room, vestigeSpawnQueue[queueIndex].region, vestigeSpawnQueue[queueIndex].colour, new VestigeCoord(vestigeSpawnQueue[queueIndex].coord), new VestigeCoord(vestigeSpawnQueue[queueIndex].safeCoord), DateTime.UtcNow, vestigeSpawnQueue[queueIndex].karma); ;
+					VestigeSpawn newSpawn = new VestigeSpawn(vestigeSpawnQueue[queueIndex].room, vestigeSpawnQueue[queueIndex].region, vestigeSpawnQueue[queueIndex].colour, new VestigeCoord(vestigeSpawnQueue[queueIndex].coord), new VestigeCoord(vestigeSpawnQueue[queueIndex].safeCoord), DateTime.UtcNow, vestigeSpawnQueue[queueIndex].karma);
 					localvestigeData.Add(newSpawn);
 
 					lastVestigeSpawns.Add(vestigeSpawnQueue[queueIndex].safeCoord);
 					vestigeCount++;
+					if (vestigeSpawnQueue[queueIndex].karma) vestigeCountKarma++;
 
 					bool devCheck = DateTime.Compare(DateTime.Now, lastDev) > 0;
 
@@ -311,7 +314,7 @@ namespace Vestiges {
 					} else if (!devCheck) {
 						Logger.LogWarning("Sorry but to slightly lower the amount of vestiges being mass spawned, devtools disables uploading for a while.");
 						Logger.LogWarning("While I do expect people to easily get around this, I hope that it will slightly lower the rate of new vestiges being mass spawned in single rooms to a rate where I won't need to lower their lifetime.");
-						Logger.LogWarning("I will likely add a way to disable this once the vestige creation rate stabilizes (or remove it completely), especially since you can now lower the Vestige lifespan in the config yourself");
+						Logger.LogWarning("I will likely add a way to disable this once the vestige creation rate stabilizes (or remove it completely), especially since you can now lower the vestige lifespan in the config yourself");
 					} else {
 						Logger.LogWarning("Skipping upload, stealth mode is active!");
 					}
@@ -321,7 +324,7 @@ namespace Vestiges {
 
 						if (Options.StealthMode.Value) {
 							newBug.col = new Color(1 - newBug.col.r, 1 - newBug.col.g, 1 - newBug.col.b);
-							Logger.LogWarning("Inverted Vestige colour because stealth mode is enabled!");
+							Logger.LogWarning("Inverted vestige colour because stealth mode is enabled!");
 						}
 
 						self.room.AddObject(newBug);
@@ -363,7 +366,7 @@ namespace Vestiges {
 			lastKarmas.Clear();
 			activeRooms.Clear();
 			if (lastLifespan != Options.Lifespan.Value || lastInfiniteLifespan != Options.InfiniteLifespan.Value) {
-				Logger.LogDebug("Vestige lifespan has changed, clearing and redownloading Vestiges...");
+				Logger.LogDebug("Vestige lifespan has changed, clearing and redownloading vestiges...");
 				ClearVestiges();
 				lastLifespan = Options.Lifespan.Value;
 				lastInfiniteLifespan = Options.InfiniteLifespan.Value;
@@ -395,7 +398,7 @@ namespace Vestiges {
 		}
 
 		private void UploadVestige(VestigeSpawn newVest) {
-			Logger.LogDebug("Attempting to upload Vestige... [" + newVest.room + ":" + newVest.region + ":(" + newVest.colour.r.ToString() + "," + newVest.colour.g.ToString() + "," + newVest.colour.b.ToString() + "):(" + newVest.spawn.x.ToString() + "," + newVest.spawn.y.ToString() + "):(" + newVest.target.x.ToString() + "," + newVest.target.y.ToString() + ")" + (newVest.karma ? ":K" : "") + "]");
+			Logger.LogDebug("Attempting to upload vestige... [" + newVest.room + ":" + newVest.region + ":(" + newVest.colour.r.ToString() + "," + newVest.colour.g.ToString() + "," + newVest.colour.b.ToString() + "):(" + newVest.spawn.x.ToString() + "," + newVest.spawn.y.ToString() + "):(" + newVest.target.x.ToString() + "," + newVest.target.y.ToString() + ")" + (newVest.karma ? ":K" : "") + "]");
 
 			Dictionary<string, string> encodedSpawnData = new Dictionary<string, string>
 			{
@@ -416,7 +419,7 @@ namespace Vestiges {
 
 		private async void DownloadVestiges(bool firstRun) {
 			if (!isDownloading && (firstRun || DateTime.Compare(DateTime.Now, nextDownload) > 0)) {
-				Logger.LogDebug("Downloading Vestiges...");
+				Logger.LogDebug("Downloading vestiges...");
 
 				isDownloading = true;
 				Options.RefreshStatusAndButton();
@@ -433,7 +436,7 @@ namespace Vestiges {
 					Options.RefreshStatusAndButton();
 					return;
 				}
-				Logger.LogDebug("Loading Vestiges...");
+				Logger.LogDebug("Loading vestiges...");
 
 				if (rawDataset == null || rawDataset == "") {
 					Logger.LogError("rawDataset is either null or empty!");
@@ -459,7 +462,7 @@ namespace Vestiges {
 				ParseRawVestiges(rawRows);
 
 				if (firstRun && Options.InfiniteLifespan.Value) {
-					Logger.LogDebug("Downloading historical Vestiges...");
+					Logger.LogDebug("Downloading historical vestiges...");
 
 					try {
 						rawDataset = await httpClient.GetStringAsync(Options.ArchiveURL.Value);
@@ -470,7 +473,7 @@ namespace Vestiges {
 						Options.RefreshStatusAndButton();
 						return;
 					}
-					Logger.LogDebug("Loading historical Vestiges... (this will take a LONG time to process)");
+					Logger.LogDebug("Loading historical vestiges... (this will take a LONG time to process)");
 
 					if (rawDataset == null || rawDataset == "") {
 						Logger.LogError("rawDataset is either null or empty!");
@@ -481,7 +484,7 @@ namespace Vestiges {
 					}
 
 					rawRows = rawDataset.Split('\n');
-					if (rawRows.Length <= 0 || !rawRows[0].Trim('\r').StartsWith("Timestamp,room,region,colour.r,colour.g,colour.b,spawn.x,spawn.y,target.x,target.y")) {
+					if (rawRows.Length <= 0 || !rawRows[0].Trim('\r').StartsWith("Timestamp,room,region,colour.r,colour.g,colour.b,spawn.x,spawn.y,target.x,target.y,karma")) {
 						Logger.LogError("rawDataset is not formatted correclty!");
 						isDownloaded = false;
 						isDownloading = false;
@@ -496,7 +499,7 @@ namespace Vestiges {
 				isDownloading = false;
 				nextDownload = DateTime.Now.AddMinutes(30);
 			} else if (isDownloading) {
-				Logger.LogWarning("Skipped download attempt: Vestiges are still being downloaded!");
+				Logger.LogWarning("Skipped download attempt: vestiges are still being downloaded!");
 			} else {
 				Logger.LogDebug("Skipped download attempt: it has been less than half an hour!");
 			}
@@ -539,6 +542,7 @@ namespace Vestiges {
 						if (Options.InfiniteLifespan.Value || (DateTime.UtcNow - currentVestige.time).TotalHours <= Options.Lifespan.Value) {
 							vestigeData[currentValues[2]][currentValues[1]].Add(currentVestige);
 							vestigeCount++;
+							if (currentVestige.karma) vestigeCountKarma++;
 						}
 
 						rawDownloads.Add(rawRows[r].Trim('\r'));
@@ -550,12 +554,13 @@ namespace Vestiges {
 				}
 			}
 			vestigeCount -= localvestigeData.Count;
-			Logger.LogDebug(validEntries + "/" + totalEntries + " Vestiges were downloaded (" + newEntries + " new, " + localvestigeData.Count + " (local) removed and " + vestigeCount + " loaded)");
+			vestigeCountKarma -= localvestigeData.FindAll(vestige => vestige.karma).Count;
+			Logger.LogDebug(validEntries + "/" + totalEntries + " vestiges were downloaded (" + newEntries + " new, " + localvestigeData.Count + " (local) removed and " + vestigeCount + " loaded)");
 			localvestigeData.Clear();
 		}
 
 		private void ClearVestiges() {
-			Logger.LogDebug("Clearing all saved Vestiges...");
+			Logger.LogDebug("Clearing all saved vestiges...");
 			if (!isDownloading) {
 
 				activeRooms.Clear();
@@ -580,11 +585,12 @@ namespace Vestiges {
 				localDeathTimes.Clear();
 				backupTargets.Clear();
 				vestigeCount = 0;
+				vestigeCountKarma = 0;
 				isDownloaded = false;
 
-				Logger.LogDebug("Cleared all Vestiges");
+				Logger.LogDebug("Cleared all vestiges");
 			} else {
-				Logger.LogWarning("Did not clear: Vestiges are still being downloaded!");
+				Logger.LogWarning("Did not clear: vestiges are still being downloaded!");
 			}
 		}
 
