@@ -2,7 +2,7 @@
 
 The form must not require users to log in and needs to output the data to [Google Sheets](./GoogleSheets.md).
 
-All questions below should be set to required:
+All questions below (unless specified) should be set to required:
 
  - Short Answer
 	 - Name/Title: room
@@ -51,3 +51,10 @@ All questions below should be set to required:
 	 - Response validation:
 		 - Number
 		 - Whole number
+ - Short Answer
+	 - Name/Title: karma
+	 - <ins>__Not required__</ins>
+	 - Response validation:
+		 - Regular Expression
+		 - Matches
+		 - `^Y$`
